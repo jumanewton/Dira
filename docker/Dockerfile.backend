@@ -1,0 +1,16 @@
+# Dockerfile for Jac backend
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Install Jaseci
+RUN pip install jaseci
+
+# Copy Jac files
+COPY backend/jac/ ./jac/
+
+# Expose port
+EXPOSE 8000
+
+# Run
+CMD ["jac", "serve", "jac/main.jac"]

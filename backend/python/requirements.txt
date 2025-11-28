@@ -1,0 +1,8 @@
+spacy
+transformers
+torch
+fastapi
+uvicorn
+requests
+byllm
+jaseci
