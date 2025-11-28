@@ -88,22 +88,6 @@ publiclens/
 └── tests/            # Test files
 ```
 
-## Development
-- Use `jac run <file.jac>` to run Jac files
-- Use `jac build <file.jac>` to build applications
-- Use `jac serve <file.jac>` to serve as API
-
-## Demo
-Record a video showing:
-- Report submission (anonymous/named)
-- Classification and routing workflow
-- Dashboard views
-- End-to-end functionality
-
-## Evaluation Metrics
-- Classification precision: ≥85% for priority categories
-- Duplicate detection recall: ≥80%
-- Routing accuracy: ≥70% for non-ambiguous cases
 
 ## License
 MIT
