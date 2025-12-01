@@ -26,54 +26,101 @@ PublicLens is a feedback and issue-tracking platform for government organisation
 - Node.js 16+
 - Docker (optional for deployment)
 
-### 1. Install Jaseci
+### 1. Environment Configuration
+Copy the `.env` file and configure your settings:
+```bash
+cp .env .env.local  # Optional: for local overrides
+```
+
+**Required Environment Variables:**
+- `SMTP_USERNAME` & `SMTP_PASSWORD`: Email credentials for notifications
+- `WEAVIATE_URL`: Vector database connection
+- `HUGGINGFACE_CACHE_DIR`: Directory for ML model caching
+
+**Optional Variables:**
+- `NLP_PORT`, `NOTIFICATION_PORT`: Service ports (defaults: 8001, 8003)
+- `SMTP_SERVER`, `SMTP_PORT`: Email server settings
+
+Edit `.env` with your configuration before running services.
+
+### 2. Install Jaseci
 ```bash
 pip install jaseci
 ```
 
-### 2. Install Python Dependencies
+### 3. Install Python Dependencies
 ```bash
 cd backend/python
 pip install -r requirements.txt
 ```
 
-### 3. Install Frontend Dependencies
+### 4. Install Frontend Dependencies
 ```bash
 cd frontend
 npm install
 ```
 
-### 4. Set up Vector Database
-- Install Weaviate or use cloud instance
-- Configure connection in `vector_db/config.py`
+### 5. Set up Vector Database
+- Install Weaviate locally or use cloud instance
+- Configure connection in `.env` (WEAVIATE_URL)
 
-### 5. Run Backend
-```bash
-cd backend/jac
-jac run main.jac
-```
-This initializes the OSP graph with sample organizations and policies.
+### 6. Download ML Models
+The first run will automatically download models from Hugging Face:
+- **GPT-2** (`gpt2`): Used for generating professional notification messages
+- **DialoGPT-medium** (`microsoft/DialoGPT-medium`): Fallback for text classification
+- **SentenceTransformers** (`sentence-transformers/all-MiniLM-L6-v2`): Generates embeddings for semantic search
 
-### 6. Run Frontend (Placeholder)
-```bash
-cd frontend
-npm start
-```
-Note: Jac Client integration pending.
+Models are cached in `HUGGINGFACE_CACHE_DIR` (default: `./models_cache`).
 
-### 7. Run NLP Service
+**Note**: First run may take time to download models (~500MB total). Subsequent runs will use cached models.
+
+### 7. Run Services
+Start services in separate terminals:
+
+**NLP Service** (port 8001):
 ```bash
 cd backend/python
 python nlp_service.py
 ```
 
+**Notification Service** (port 8003):
+```bash
+cd backend/python
+python notification_service.py
+```
+
+**Jaseci Backend** (port 8002):
+```bash
+cd backend/jac
+jac serve main.jac
+```
+
+**Frontend** (port 3000):
+```bash
+cd frontend
+npm start
+```
+Features include:
+- Report submission form with anonymous option
+- Organization dashboard for managing assigned reports
+- Public transparency view of resolved issues
+- Analytics dashboard with metrics and charts
+- Privacy controls with automatic data redaction
+
 ## Current Status
 - ✅ Jac OSP graph with nodes (Organisation, Report, etc.) and edges
-- ✅ Basic multi-agent walkers (IntakeAgent, ClassifierAgent, etc.)
+- ✅ Basic multi-agent walkers (IntakeAgent, ClassifierAgent, DuplicateDetectorAgent, RouterAgent)
 - ✅ Graph initialization with sample data
-- 🔄 byLLM integration (simplified placeholders due to compilation issues)
+- ✅ NLP service with entity extraction, classification, and message drafting
+- ✅ Vector database integration with Weaviate
+- ✅ Duplicate detection using semantic search
+- ✅ Automated routing and notification system
+- ✅ Environment configuration with .env support
+- ✅ Organization dashboard with report management
+- ✅ Public transparency view with resolved reports
+- ✅ Privacy controls and data redaction
+- ✅ Analytics dashboard with metrics and insights
 - 🔄 Frontend Jac Client integration
-- 🔄 NLP and vector DB services
 
 ## Project Structure
 ```

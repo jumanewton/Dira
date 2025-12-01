@@ -1,105 +1,41 @@
 import React, { useState } from 'react';
-import { jacSpawn } from 'jac-client';  // Import jacSpawn from jac-client
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { jacSpawn } from 'jac-client';
+import './App.css';
+import './App.css';
+
+// Components
+import ReportForm from './components/ReportForm';
+import OrganisationDashboard from './components/OrganisationDashboard';
+import PublicTransparency from './components/PublicTransparency';
+import Analytics from './components/Analytics';
 
 function App() {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    name: '',
-    email: '',
-    anonymous: true
-  });
-  const [status, setStatus] = useState('');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus('Submitting...');
-
-    try {
-      // Call IntakeAgent walker
-      const result = await jacSpawn('IntakeAgent', '', {
-        report_data: {
-          title: formData.title,
-          description: formData.description,
-          name: formData.anonymous ? '' : formData.name,
-          email: formData.anonymous ? '' : formData.email
-        }
-      });
-
-      setStatus(`Report submitted successfully! ID: ${result.report_id}`);
-    } catch (error) {
-      setStatus(`Error: ${error.message}`);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
   return (
-    <div className="App">
-      <h1>PublicLens - Report Issues</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Title:</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>Description:</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <label>
-            <input
-              type="checkbox"
-              name="anonymous"
-              checked={formData.anonymous}
-              onChange={handleChange}
-            />
-            Submit anonymously
-          </label>
-        </div>
-        {!formData.anonymous && (
-          <>
-            <div>
-              <label>Name:</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-          </>
-        )}
-        <button type="submit">Submit Report</button>
-      </form>
-      {status && <p>{status}</p>}
-    </div>
+    <Router>
+      <div className="App">
+        <nav className="navbar">
+          <div className="nav-brand">
+            <Link to="/">PublicLens</Link>
+          </div>
+          <ul className="nav-links">
+            <li><Link to="/">Report Issue</Link></li>
+            <li><Link to="/transparency">Public View</Link></li>
+            <li><Link to="/dashboard">Org Dashboard</Link></li>
+            <li><Link to="/analytics">Analytics</Link></li>
+          </ul>
+        </nav>
+
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<ReportForm />} />
+            <Route path="/transparency" element={<PublicTransparency />} />
+            <Route path="/dashboard" element={<OrganisationDashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 

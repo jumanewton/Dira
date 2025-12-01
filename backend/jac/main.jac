@@ -212,11 +212,69 @@ walker RouterAgent {
     can route with Report entry {
         print("RouterAgent: routing report");
         
-        # Placeholder: route based on category, urgency, etc.
-        # For now, just mark as routed
-        self.report.status = "routed";
+        # Select organisations based on category
+        selected_orgs = [];
         
-        print("Report routed");
+        if self.report.category == "infrastructure":
+            # Find utility or government organisations
+            orgs = root --> Organisation;
+            for org in orgs:
+                if org.type == "utility" or org.type == "government":
+                    selected_orgs.append(org);
+        elif self.report.category == "safety":
+            # Find government organisations
+            orgs = root --> Organisation;
+            for org in orgs:
+                if org.type == "government":
+                    selected_orgs.append(org);
+        elif self.report.category == "utility":
+            # Find utility organisations
+            orgs = root --> Organisation;
+            for org in orgs:
+                if org.type == "utility":
+                    selected_orgs.append(org);
+        else:
+            # Default to all organisations
+            selected_orgs = root --> Organisation;
+        
+        # For each selected organisation, draft and send notification
+        for org in selected_orgs:
+            # Draft message
+            try:
+                response = requests.post("http://localhost:8001/draft_message", json={
+                    "title": self.report.title,
+                    "description": self.report.description,
+                    "urgency": self.report.urgency,
+                    "org_type": org.type
+                });
+                if response.status_code == 200:
+                    message = response.json()["message"];
+                else:
+                    message = f"Report: {self.report.title} - {self.report.description}";
+            except:
+                message = f"Report: {self.report.title} - {self.report.description}";
+            
+            # Send notification
+            if org.contact_email:
+                try:
+                    send_response = requests.post("http://localhost:8003/send_email", json={
+                        "to": org.contact_email,
+                        "subject": f"Public Report: {self.report.title}",
+                        "body": message
+                    });
+                    print(f"Notification sent to {org.name} via email");
+                except:
+                    print(f"Failed to send notification to {org.name}");
+            
+            # Create notification edge
+            notification = HandledBy(
+                assigned_at=str(datetime.datetime.now()),
+                status="sent"
+            );
+            self.report --> notification --> org;
+        
+        self.report.status = "routed";
+        print(f"Report routed to {len(selected_orgs)} organisations");
     }
 }
 

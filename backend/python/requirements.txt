@@ -12,6 +12,7 @@ transformers
 spacy
 sentence-transformers
 weaviate-client
+python-dotenv
 
 fastapi
 uvicorn

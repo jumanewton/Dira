@@ -12,23 +12,23 @@
 - [x] Test Jac OSP graph initialization
 
 ## Phase 2: NLP and Vector DB Integration
-- [ ] Implement NLP service for entity extraction
-- [ ] Add classification and urgency assessment
-- [ ] Integrate vector database for embeddings
-- [ ] Implement duplicate detection logic
-- [ ] Add confidence scoring
+- [x] Implement NLP service for entity extraction
+- [x] Add classification and urgency assessment
+- [x] Integrate vector database for embeddings
+- [x] Implement duplicate detection logic
+- [x] Add confidence scoring
 
 ## Phase 3: Routing and Notifications
-- [ ] Implement organisation selection logic
-- [ ] Add message drafting with byLLM
-- [ ] Integrate SMTP/API/SMS connectors
-- [ ] Add delivery status tracking
+- [x] Implement organisation selection logic
+- [x] Add message drafting with byLLM
+- [x] Integrate SMTP/API/SMS connectors
+- [x] Add delivery status tracking
 
 ## Phase 4: Dashboards and UI
-- [ ] Create organisation dashboard
-- [ ] Add public transparency view
-- [ ] Implement privacy controls and redaction
-- [ ] Add analytics and metrics display
+- [x] Create organisation dashboard
+- [x] Add public transparency view
+- [x] Implement privacy controls and redaction
+- [x] Add analytics and metrics display
 
 ## Phase 5: Testing and Evaluation
 - [ ] Create seed dataset

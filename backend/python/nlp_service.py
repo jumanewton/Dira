@@ -6,17 +6,23 @@ from transformers import pipeline
 import weaviate
 from sentence_transformers import SentenceTransformer
 import json
+import os
+from dotenv import load_dotenv
+from vector_db.config import WEAVIATE_URL, COLLECTION_NAME
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI()
 
-# Load models
-nlp = spacy.load("en_core_web_sm")
-classifier = pipeline("text-classification", model="microsoft/DialoGPT-medium")
-embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+# Configuration from environment
+CACHE_DIR = os.getenv("HUGGINGFACE_CACHE_DIR", "./models_cache")
 
-# Vector DB setup
-WEAVIATE_URL = "http://localhost:8080"
-COLLECTION_NAME = "reports"
+# Load models with cache directory
+nlp = spacy.load("en_core_web_sm")
+classifier = pipeline("text-classification", model="microsoft/DialoGPT-medium", cache_dir=CACHE_DIR)
+message_drafter = pipeline("text-generation", model="gpt2", cache_dir=CACHE_DIR)
+embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_dir=CACHE_DIR)
 
 client = weaviate.Client(url=WEAVIATE_URL)
 
@@ -87,14 +93,20 @@ def store_embedding(report_id: str, title: str, description: str):
     }, COLLECTION_NAME, vector=embedding)
     return {"status": "stored"}
 
-@app.post("/find_duplicates")
-def find_duplicates(report_id: str, title: str, description: str, threshold: float = 0.8):
-    text = title + " " + description
-    embedding = embedding_model.encode(text).tolist()
-    result = client.query.get(COLLECTION_NAME, ["report_id", "title", "description", "_additional {certainty}"]).with_near_vector({"vector": embedding, "certainty": threshold}).do()
-    duplicates = [obj for obj in result["data"]["Get"][COLLECTION_NAME] if obj["_additional"]["certainty"] > threshold and obj["report_id"] != report_id]
-    return {"duplicates": duplicates}
+@app.post("/draft_message")
+def draft_message(title: str, description: str, urgency: str, org_type: str):
+    prompt = f"Draft a professional notification message to a {org_type} organization about this public report. Title: {title}. Description: {description}. Urgency level: {urgency}. Keep it concise and professional."
+    
+    result = message_drafter(prompt, max_length=150, num_return_sequences=1, temperature=0.7)
+    message = result[0]['generated_text'].replace(prompt, "").strip()
+    
+    # Fallback if generation fails
+    if not message or len(message) < 20:
+        message = f"Urgent Report: {title}\n\n{description}\n\nUrgency: {urgency}\n\nPlease investigate immediately."
+    
+    return {"message": message}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.getenv("NLP_PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
