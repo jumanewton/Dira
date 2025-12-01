@@ -1,8 +1,19 @@
-spacy
+# spacy
+# transformers
+# torch
+# fastapi
+# uvicorn
+# requests
+# byllm
+# jaseci
+
+torch --index-url https://download.pytorch.org/whl/cpu
 transformers
-torch
+spacy
+
 fastapi
 uvicorn
 requests
+
 byllm
 jaseci
