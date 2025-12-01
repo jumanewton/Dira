@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { spawn } from 'jac-client';  // Assuming jac-client provides spawn
+import { jacSpawn } from 'jac-client';  // Import jacSpawn from jac-client
 
 function App() {
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ function App() {
 
     try {
       // Call IntakeAgent walker
-      const result = await spawn('IntakeAgent', {
+      const result = await jacSpawn('IntakeAgent', '', {
         report_data: {
           title: formData.title,
           description: formData.description,

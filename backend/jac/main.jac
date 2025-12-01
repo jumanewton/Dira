@@ -1,5 +1,8 @@
 # Main entry point for PublicLens
 
+import uuid;
+import datetime;
+
 # Node definitions
 node Organisation {
     has name: str;
@@ -65,8 +68,32 @@ walker IntakeAgent {
 
     can validate_and_create with `root entry {
         print("IntakeAgent: validating and creating report");
-        # Placeholder: create report
-        print("Report created");
+        
+        # Create report node
+        new_report = Report(
+            id=str(uuid.uuid4()),
+            title=self.report_data["title"],
+            description=self.report_data["description"],
+            category="pending",
+            urgency="medium",
+            entities="{}",
+            confidence=0.5,
+            status="submitted",
+            submitted_at=str(datetime.datetime.now()),
+            reporter=Reporter(
+                id=str(uuid.uuid4()),
+                name=self.report_data["name"],
+                email=self.report_data["email"],
+                is_anonymous=(self.report_data["name"] == "")
+            ),
+            embedding="[]"
+        );
+        
+        # Connect to root
+        root ++> new_report;
+        
+        print("Report created with ID:", new_report.id);
+        report {"report_id": new_report.id, "status": "submitted"};
     }
 }
 

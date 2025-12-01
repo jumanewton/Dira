@@ -21,6 +21,13 @@ wheels/
 *.egg
 MANIFEST
 
+venv/
+**/venv/
+.env
+__pycache__/
+node_modules/
+*.log
+
 # Node
 node_modules/
 npm-debug.log*
