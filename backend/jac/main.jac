@@ -2,6 +2,8 @@
 
 import uuid;
 import datetime;
+import requests;
+import json;
 
 # Node definitions
 node Organisation {
@@ -69,6 +71,15 @@ walker IntakeAgent {
     can validate_and_create with `root entry {
         print("IntakeAgent: validating and creating report");
         
+        # Extract entities
+        text = self.report_data["title"] + " " + self.report_data["description"];
+        try {
+            response = requests.post("http://localhost:8001/extract_entities", json={"text": text});
+            entities = response.json() if response.status_code == 200 else {};
+        } catch {
+            entities = {};
+        }
+        
         # Create report node
         new_report = Report(
             id=str(uuid.uuid4()),
@@ -76,7 +87,7 @@ walker IntakeAgent {
             description=self.report_data["description"],
             category="pending",
             urgency="medium",
-            entities="{}",
+            entities=json.dumps(entities),
             confidence=0.5,
             status="submitted",
             submitted_at=str(datetime.datetime.now()),
@@ -92,6 +103,9 @@ walker IntakeAgent {
         # Connect to root
         root ++> new_report;
         
+        # Spawn ClassifierAgent
+        spawn ClassifierAgent(report=new_report) --> new_report;
+        
         print("Report created with ID:", new_report.id);
         report {"report_id": new_report.id, "status": "submitted"};
     }
@@ -103,8 +117,50 @@ walker ClassifierAgent {
 
     can classify with Report entry {
         print("ClassifierAgent: classifying report");
-        # Placeholder: classify
+        
+        text = self.report.title + " " + self.report.description;
+        
+        # Classify
+        try {
+            response = requests.post("http://localhost:8001/classify", json={"text": text});
+            if response.status_code == 200 {
+                data = response.json();
+                self.report.category = data["category"];
+                self.report.confidence = data["confidence"];
+            }
+        } catch {
+            print("Classification failed");
+        }
+        
+        # Assess urgency
+        try {
+            response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
+            if response.status_code == 200 {
+                self.report.urgency = response.json();
+            }
+        } catch {
+            print("Urgency assessment failed");
+        }
+        
+        # Store embedding
+        try {
+            response = requests.post("http://localhost:8001/store_embedding", json={
+                "report_id": self.report.id,
+                "title": self.report.title,
+                "description": self.report.description
+            });
+            if response.status_code == 200 {
+                print("Embedding stored");
+            }
+        } catch {
+            print("Embedding storage failed");
+        }
+        
+        self.report.status = "classified";
         print("Report classified");
+        
+        # Spawn DuplicateDetectorAgent
+        spawn DuplicateDetectorAgent(report=self.report) --> self.report;
     }
 }
 
@@ -113,8 +169,40 @@ walker DuplicateDetectorAgent {
 
     can detect with Report entry {
         print("DuplicateDetectorAgent: checking for duplicates");
-        # Placeholder: detect
+        
+        try {
+            response = requests.post("http://localhost:8001/find_duplicates", json={
+                "report_id": self.report.id,
+                "title": self.report.title,
+                "description": self.report.description,
+                "threshold": 0.8
+            });
+            if response.status_code == 200 {
+                duplicates = response.json()["duplicates"];
+                for dup in duplicates {
+                    # Find the duplicate report node
+                    dup_report = root --> Report(id=dup["report_id"]) --> Report;
+                    if dup_report {
+                        self.report --> RelatedTo(similarity_score=dup["_additional"]["certainty"], relationship_type="duplicate") --> dup_report;
+                    }
+                }
+                if duplicates {
+                    self.report.status = "duplicate";
+                    print("Duplicates found:", len(duplicates));
+                } else {
+                    self.report.status = "unique";
+                    print("No duplicates found");
+                }
+            }
+        } catch {
+            print("Duplicate detection failed");
+            self.report.status = "checked";
+        }
+        
         print("Duplicates checked");
+        
+        # Spawn RouterAgent
+        spawn RouterAgent(report=self.report) --> self.report;
     }
 }
 
@@ -123,7 +211,11 @@ walker RouterAgent {
 
     can route with Report entry {
         print("RouterAgent: routing report");
-        # Placeholder: route
+        
+        # Placeholder: route based on category, urgency, etc.
+        # For now, just mark as routed
+        self.report.status = "routed";
+        
         print("Report routed");
     }
 }
