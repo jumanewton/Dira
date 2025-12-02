@@ -33,6 +33,7 @@ cp .env .env.local  # Optional: for local overrides
 ```
 
 **Required Environment Variables:**
+- `GEMINI_API_KEY`: Google Gemini API key for NLP tasks
 - `SMTP_USERNAME` & `SMTP_PASSWORD`: Email credentials for notifications
 - `WEAVIATE_URL`: Vector database connection
 - `HUGGINGFACE_CACHE_DIR`: Directory for ML model caching
@@ -66,20 +67,25 @@ npm install
 
 ### 6. Download ML Models
 The first run will automatically download models from Hugging Face:
-- **GPT-2** (`gpt2`): Used for generating professional notification messages
-- **DialoGPT-medium** (`microsoft/DialoGPT-medium`): Fallback for text classification
-- **SentenceTransformers** (`sentence-transformers/all-MiniLM-L6-v2`): Generates embeddings for semantic search
+- **Gemini 3 Pro (Preview)**: Used for text classification, urgency assessment, and message drafting (requires API key).
+- **SentenceTransformers** (`sentence-transformers/all-MiniLM-L6-v2`): Generates embeddings for semantic search (cached locally).
 
 Models are cached in `HUGGINGFACE_CACHE_DIR` (default: `./models_cache`).
 
-**Note**: First run may take time to download models (~500MB total). Subsequent runs will use cached models.
+**Note**: First run may take time to download the embedding model. Subsequent runs will use cached models.
 
 ### 7. Run Services
 Start services in separate terminals:
 
+**Weaviate Vector DB** (port 8080):
+```bash
+docker compose -f docker/docker-compose.yml up -d weaviate
+```
+
 **NLP Service** (port 8001):
 ```bash
 cd backend/python
+# Ensure GEMINI_API_KEY is set in .env
 python nlp_service.py
 ```
 
@@ -92,7 +98,8 @@ python notification_service.py
 **Jaseci Backend** (port 8002):
 ```bash
 cd backend/jac
-jac serve main.jac
+chmod +x serve.sh
+./serve.sh
 ```
 
 **Frontend** (port 3000):

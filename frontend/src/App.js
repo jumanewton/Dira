@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { jacSpawn } from 'jac-client';
-import './App.css';
 import './App.css';
 
 // Components

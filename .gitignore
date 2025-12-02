@@ -56,3 +56,13 @@ Thumbs.db
 # JAC session files
 *.session
 *.session.users.json
+
+# Jac build artifacts
+__jac_gen__/
+*.jir
+
+# Model Cache
+models_cache/*
+*.lock
+*.safetensors
+
