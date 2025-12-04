@@ -179,7 +179,6 @@ walker DuplicateDetectorAgent {
 }
 
 walker ClassifierAgent {
-    has report_data: dict;
 
     can classify with Report entry {
         print("ClassifierAgent: classifying report");
@@ -257,7 +256,7 @@ walker IntakeAgent {
 
     can spawn_classifier with Report entry {
         # Spawn ClassifierAgent
-        spawn ClassifierAgent(report_data=self.report_data);
+        spawn ClassifierAgent;
         
         print("Report created with ID:", here.id);
         report {"report_id": here.id, "status": "submitted"};
