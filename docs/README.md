@@ -102,11 +102,25 @@ chmod +x serve.sh
 ./serve.sh
 ```
 
+**Seed Data** (Important for Demo):
+Populate the graph with sample reports and create the admin user.
+```bash
+cd backend/python
+python seed_data.py
+```
+
 **Frontend** (port 3000):
 ```bash
 cd frontend
 npm start
 ```
+The frontend is configured to automatically log in as the admin user for demonstration purposes.
+
+## Demo Credentials
+The system uses a default admin account for the demo:
+- **Username**: `admin@publiclens.com`
+- **Password**: `password123`
+
 Features include:
 - Report submission form with anonymous option
 - Organization dashboard for managing assigned reports
@@ -127,7 +141,7 @@ Features include:
 - ✅ Public transparency view with resolved reports
 - ✅ Privacy controls and data redaction
 - ✅ Analytics dashboard with metrics and insights
-- 🔄 Frontend Jac Client integration
+- ✅ Frontend Jac Client integration (Auto-login enabled)
 
 ## Project Structure
 ```
