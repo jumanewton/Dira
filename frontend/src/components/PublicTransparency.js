@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { jacSpawn } from 'jac-client';
+import { runWalker } from '../jacService';
 
 function PublicTransparency() {
   const [reports, setReports] = useState([]);
@@ -16,11 +16,13 @@ function PublicTransparency() {
   const fetchPublicReports = async () => {
     try {
       setLoading(true);
-      const response = await jacSpawn('get_public_reports', '', {});
+      const response = await runWalker('get_public_reports', {});
       
       let reportsList = [];
       if (response.report && Array.isArray(response.report)) {
-          reportsList = response.report;
+          // Jac returns a list of reports, so we need to take the first element if it's a list of lists
+          // response.report is typically [[{...}, {...}]]
+          reportsList = Array.isArray(response.report[0]) ? response.report[0] : response.report;
       } else if (Array.isArray(response)) {
           reportsList = response;
       }
@@ -55,7 +57,7 @@ function PublicTransparency() {
       if (!trackId) return;
       
       try {
-          const response = await jacSpawn('get_report_status', '', { report_id: trackId });
+          const response = await runWalker('get_report_status', { report_id: trackId });
           let result = null;
           if (response.report) {
               result = Array.isArray(response.report) ? response.report[0] : response.report;

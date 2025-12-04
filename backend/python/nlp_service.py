@@ -55,9 +55,14 @@ except Exception as e:
     print(f"Warning: Could not connect to Weaviate at {WEAVIATE_URL}. Vector DB features will be disabled. Error: {e}")
     client = None
 
+from pydantic import BaseModel
+
+class TextRequest(BaseModel):
+    text: str
+
 @app.post("/extract_entities")
-def extract_entities(text: str):
-    doc = nlp(text)
+def extract_entities(request: TextRequest):
+    doc = nlp(request.text)
     entities = {
         "organisations": [ent.text for ent in doc.ents if ent.label_ == "ORG"],
         "locations": [ent.text for ent in doc.ents if ent.label_ == "GPE"],
@@ -65,8 +70,12 @@ def extract_entities(text: str):
     }
     return entities
 
+class ClassifyRequest(BaseModel):
+    text: str
+
 @app.post("/classify")
-def classify(text: str):
+def classify(request: ClassifyRequest):
+    text = request.text
     if GEMINI_API_KEY:
         try:
             prompt = f"""Classify the following public report into one of these categories: infrastructure, safety, utility, health, general.
@@ -101,8 +110,12 @@ def classify(text: str):
     confidence = 0.7  # Placeholder confidence
     return {"category": category, "confidence": confidence}
 
+class UrgencyRequest(BaseModel):
+    text: str
+
 @app.post("/assess_urgency")
-def assess_urgency(text: str):
+def assess_urgency(request: UrgencyRequest):
+    text = request.text
     if GEMINI_API_KEY:
         try:
             prompt = f"""Assess the urgency of this public report as 'low', 'medium', or 'high'.
@@ -125,28 +138,42 @@ def assess_urgency(text: str):
     else:
         return "low"
 
+class EmbeddingRequest(BaseModel):
+    text: str
+
 @app.post("/generate_embedding")
-def generate_embedding(text: str):
-    embedding = embedding_model.encode(text).tolist()
+def generate_embedding(request: EmbeddingRequest):
+    embedding = embedding_model.encode(request.text).tolist()
     return {"embedding": embedding}
 
+class StoreEmbeddingRequest(BaseModel):
+    report_id: str
+    title: str
+    description: str
+
 @app.post("/store_embedding")
-def store_embedding(report_id: str, title: str, description: str):
+def store_embedding(request: StoreEmbeddingRequest):
     if not client:
         return {"status": "skipped", "reason": "Weaviate not connected"}
         
-    text = title + " " + description
+    text = request.title + " " + request.description
     embedding = embedding_model.encode(text).tolist()
     client.data_object.create({
-        "report_id": report_id,
-        "title": title,
-        "description": description
+        "report_id": request.report_id,
+        "title": request.title,
+        "description": request.description
     }, COLLECTION_NAME, vector=embedding)
     return {"status": "stored"}
 
+class DraftMessageRequest(BaseModel):
+    title: str
+    description: str
+    urgency: str
+    org_type: str
+
 @app.post("/draft_message")
-def draft_message(title: str, description: str, urgency: str, org_type: str):
-    prompt = f"Draft a professional notification message to a {org_type} organization about this public report. Title: {title}. Description: {description}. Urgency level: {urgency}. Keep it concise and professional."
+def draft_message(request: DraftMessageRequest):
+    prompt = f"Draft a professional notification message to a {request.org_type} organization about this public report. Title: {request.title}. Description: {request.description}. Urgency level: {request.urgency}. Keep it concise and professional."
     
     message = ""
     if GEMINI_API_KEY:
@@ -158,7 +185,7 @@ def draft_message(title: str, description: str, urgency: str, org_type: str):
 
     # Fallback if generation fails or no key
     if not message or len(message) < 20:
-        message = f"Urgent Report: {title}\n\n{description}\n\nUrgency: {urgency}\n\nPlease investigate immediately."
+        message = f"Urgent Report: {request.title}\n\n{request.description}\n\nUrgency: {request.urgency}\n\nPlease investigate immediately."
     
     return {"message": message}
 

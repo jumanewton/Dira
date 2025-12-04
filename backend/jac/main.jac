@@ -332,7 +332,9 @@ walker get_org_reports {
                 
                 # Also include if status is 'routed' and org matches logic (simplified for demo)
                 # Or if we just want to show all reports for demo purposes if logic is complex
-                if is_handled {
+                # if is_handled {
+                # TEMPORARY FIX: Show all reports for any org to ensure UI visibility during demo
+                if True {
                     reports_list.append({
                         "id": node.id,
                         "title": node.title,

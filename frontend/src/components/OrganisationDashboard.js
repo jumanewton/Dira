@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { jacSpawn } from 'jac-client';
+import { runWalker } from '../jacService';
 
 function OrganisationDashboard() {
   const [reports, setReports] = useState([]);
@@ -14,11 +14,13 @@ function OrganisationDashboard() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await jacSpawn('get_org_reports', '', { org_name: selectedOrg });
+      const response = await runWalker('get_org_reports', { org_name: selectedOrg });
       
       let reportsList = [];
       if (response.report && Array.isArray(response.report)) {
-          reportsList = response.report;
+          // Jac returns a list of reports, so we need to take the first element if it's a list of lists
+          // response.report is typically [[{...}, {...}]]
+          reportsList = Array.isArray(response.report[0]) ? response.report[0] : response.report;
       } else if (Array.isArray(response)) {
           reportsList = response;
       }
@@ -34,7 +36,7 @@ function OrganisationDashboard() {
   const updateReportStatus = async (reportId, newStatus) => {
     try {
       // Call walker to update report status
-      await jacSpawn('StatusUpdateAgent', '', {
+      await runWalker('StatusUpdateAgent', {
         report_id: reportId,
         status: newStatus
       });
