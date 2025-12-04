@@ -291,7 +291,7 @@ walker get_report_status {
     has report_id: str;
 
     can check_status with `root entry {
-        found = false;
+        found = False;
         for node in root.out_nodes() {
             if "id" in node.context and node.id == self.report_id {
                 report {
@@ -301,12 +301,136 @@ walker get_report_status {
                     "urgency": node.urgency,
                     "submitted_at": node.submitted_at
                 };
-                found = true;
+                found = True;
             }
         }
         if not found {
             report {"error": "Report not found"};
         }
+    }
+}
+
+walker get_org_reports {
+    has org_name: str;
+
+    can return_reports with `root entry {
+        reports_list = [];
+        # Iterate all reports connected to root
+        for node in root.out_nodes() {
+            if "title" in node.context { # Is a Report
+                # Check if handled by the org
+                is_handled = False;
+                # In a real graph database we would traverse edges. 
+                # Here we check if the report is connected to the org via HandledBy edge.
+                # We iterate the report's out nodes to find the organisation.
+                for connected_node in node.out_nodes() {
+                    if "name" in connected_node.context and connected_node.name == self.org_name {
+                        is_handled = True;
+                        break;
+                    }
+                }
+                
+                # Also include if status is 'routed' and org matches logic (simplified for demo)
+                # Or if we just want to show all reports for demo purposes if logic is complex
+                if is_handled {
+                    reports_list.append({
+                        "id": node.id,
+                        "title": node.title,
+                        "description": node.description,
+                        "status": node.status,
+                        "category": node.category,
+                        "urgency": node.urgency,
+                        "submitted_at": node.submitted_at,
+                        "entities": node.entities
+                    });
+                }
+            }
+        }
+        report reports_list;
+    }
+}
+
+walker get_analytics {
+    can calculate_metrics with `root entry {
+        total_reports = 0;
+        resolved_reports = 0;
+        reports_by_category = {};
+        reports_by_urgency = {};
+        reports_by_status = {};
+        
+        # Iterate all reports
+        for node in root.out_nodes() {
+            if "title" in node.context { # Is a Report
+                total_reports += 1;
+                
+                if node.status == "resolved" {
+                    resolved_reports += 1;
+                }
+                
+                # Category
+                if node.category in reports_by_category {
+                    reports_by_category[node.category] += 1;
+                } else {
+                    reports_by_category[node.category] = 1;
+                }
+                
+                # Urgency
+                if node.urgency in reports_by_urgency {
+                    reports_by_urgency[node.urgency] += 1;
+                } else {
+                    reports_by_urgency[node.urgency] = 1;
+                }
+                
+                # Status
+                if node.status in reports_by_status {
+                    reports_by_status[node.status] += 1;
+                } else {
+                    reports_by_status[node.status] = 1;
+                }
+            }
+        }
+        
+        # Mock monthly trend for now
+        monthly_trend = [
+          { "month": "Oct", "reports": 34, "resolved": 28 },
+          { "month": "Nov", "reports": 45, "resolved": 32 },
+          { "month": "Dec", "reports": 77, "resolved": 29 }
+        ];
+        
+        report {
+            "totalReports": total_reports,
+            "resolvedReports": resolved_reports,
+            "avgResolutionTime": 5.0,
+            "reportsByCategory": reports_by_category,
+            "reportsByUrgency": reports_by_urgency,
+            "reportsByStatus": reports_by_status,
+            "monthlyTrend": monthly_trend
+        };
+    }
+}
+
+walker StatusUpdateAgent {
+    has report_id: str;
+    has status: str;
+
+    can find_report with `root entry {
+        found = False;
+        for node in root.out_nodes() {
+            if "id" in node.context and node.id == self.report_id {
+                visit node;
+                found = True;
+                break;
+            }
+        }
+        if not found {
+            report {"error": "Report not found"};
+        }
+    }
+
+    can update_report with Report entry {
+        here.status = self.status;
+        report {"success": True, "id": here.id, "status": here.status};
+        disengage;
     }
 }
 

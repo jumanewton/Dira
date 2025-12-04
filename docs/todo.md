@@ -31,11 +31,11 @@
 - [x] Add analytics and metrics display
 
 ## Phase 5: Testing and Evaluation
-- [ ] Create seed dataset
+- [x] Create seed dataset
 - [ ] Implement evaluation metrics
 - [ ] Test end-to-end workflow
 - [ ] Record demo video
-- [ ] Prepare GitHub repository
+- [x] Prepare GitHub repository
 
 ## Phase 6: Deployment and Polish
 - [ ] Deploy to cloud (Render/GCP/Azure)

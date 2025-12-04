@@ -14,31 +14,16 @@ function OrganisationDashboard() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      // In a real implementation, this would call a walker to get reports for the organization
-      // For now, we'll simulate with mock data
-      const mockReports = [
-        {
-          id: '1',
-          title: 'Pothole on Main Street',
-          description: 'Large pothole causing traffic issues',
-          status: 'routed',
-          urgency: 'medium',
-          category: 'infrastructure',
-          submitted_at: '2025-12-01T10:00:00Z',
-          entities: '{"locations": ["Main Street"]}'
-        },
-        {
-          id: '2',
-          title: 'Street Light Out',
-          description: 'Street light not working for 3 days',
-          status: 'routed',
-          urgency: 'low',
-          category: 'utility',
-          submitted_at: '2025-11-30T15:30:00Z',
-          entities: '{"locations": ["Elm Street"]}'
-        }
-      ];
-      setReports(mockReports);
+      const response = await jacSpawn('get_org_reports', '', { org_name: selectedOrg });
+      
+      let reportsList = [];
+      if (response.report && Array.isArray(response.report)) {
+          reportsList = response.report;
+      } else if (Array.isArray(response)) {
+          reportsList = response;
+      }
+      
+      setReports(reportsList);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {

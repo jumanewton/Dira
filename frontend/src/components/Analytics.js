@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { jacSpawn } from 'jac-client';
 
 function Analytics() {
   const [metrics, setMetrics] = useState({});
@@ -11,44 +12,54 @@ function Analytics() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      // Mock analytics data - in real implementation, fetch from backend
-      const mockMetrics = {
-        totalReports: 156,
-        resolvedReports: 89,
-        avgResolutionTime: 7.2,
-        reportsByCategory: {
-          infrastructure: 45,
-          safety: 28,
-          utility: 32,
-          health: 15,
-          general: 36
-        },
-        reportsByUrgency: {
-          high: 12,
-          medium: 67,
-          low: 77
-        },
-        reportsByStatus: {
-          submitted: 23,
-          classified: 15,
-          routed: 29,
-          resolved: 89
-        },
-        monthlyTrend: [
-          { month: 'Oct', reports: 34, resolved: 28 },
-          { month: 'Nov', reports: 45, resolved: 32 },
-          { month: 'Dec', reports: 77, resolved: 29 }
-        ]
+      const response = await jacSpawn('get_analytics', '', {});
+      
+      let data = {};
+      if (response.report) {
+          // If report is a list (common in Jac), take the first item
+          data = Array.isArray(response.report) ? response.report[0] : response.report;
+      } else {
+          data = response;
+      }
+
+      // Ensure default values to prevent crashes
+      const safeData = {
+          totalReports: data.totalReports || 0,
+          resolvedReports: data.resolvedReports || 0,
+          avgResolutionTime: data.avgResolutionTime || 0,
+          reportsByCategory: data.reportsByCategory || {},
+          reportsByUrgency: data.reportsByUrgency || {},
+          reportsByStatus: data.reportsByStatus || {},
+          monthlyTrend: data.monthlyTrend || []
       };
-      setMetrics(mockMetrics);
+
+      setMetrics(safeData);
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      // Set empty defaults on error
+      setMetrics({
+          totalReports: 0,
+          resolvedReports: 0,
+          avgResolutionTime: 0,
+          reportsByCategory: {},
+          reportsByUrgency: {},
+          reportsByStatus: {},
+          monthlyTrend: []
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const renderBarChart = (data, title, color = '#4CAF50') => {
+    if (!data || Object.keys(data).length === 0) {
+        return (
+            <div className="chart-container">
+                <h4>{title}</h4>
+                <p>No data available</p>
+            </div>
+        );
+    }
     const maxValue = Math.max(...Object.values(data));
     return (
       <div className="chart-container">
