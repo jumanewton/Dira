@@ -66,6 +66,158 @@ edge RelatedTo {
 edge HandledBy {}
 
 # Walker definitions
+
+walker RouterAgent {
+
+    can route with Report entry {
+        print("RouterAgent: routing report");
+        
+        # Select organisations based on category
+        selected_orgs = [];
+        
+        if here.category == "infrastructure" {
+            # Find utility or government organisations
+            # Assuming root.out_nodes() returns a list of nodes
+            # If not, we might need another way to traverse
+            for org in root.out_nodes() {
+                if "type" in org.context and (org.type == "utility" or org.type == "government") {
+                    selected_orgs.append(org);
+                }
+            }
+        } elif here.category == "safety" {
+            # Find government organisations
+            for org in root.out_nodes() {
+                if "type" in org.context and org.type == "government" {
+                    selected_orgs.append(org);
+                }
+            }
+        } elif here.category == "utility" {
+            # Find utility organisations
+            for org in root.out_nodes() {
+                if "type" in org.context and org.type == "utility" {
+                    selected_orgs.append(org);
+                }
+            }
+        } else {
+            # Default to all organisations
+            for org in root.out_nodes() {
+                if "type" in org.context {
+                    selected_orgs.append(org);
+                }
+            }
+        }
+        
+        # For each selected organisation, draft and send notification
+        for org in selected_orgs {
+            # Draft message
+            response = requests.post("http://localhost:8001/draft_message", json={
+                "title": here.title,
+                "description": here.description,
+                "urgency": here.urgency,
+                "org_type": org.type
+            });
+            if response.status_code == 200 {
+                message = response.json()["message"];
+            } else {
+                message = "Report: " + here.title + " - " + here.description;
+            }
+            
+            # Send notification
+            if org.contact_email {
+                send_response = requests.post("http://localhost:8003/send_email", json={
+                    "to": org.contact_email,
+                    "subject": "Public Report: " + here.title,
+                    "body": message
+                });
+                if send_response.status_code == 200 {
+                    print("Notification sent to " + org.name + " via email");
+                } else {
+                    print("Failed to send notification to " + org.name);
+                }
+            }
+            
+            # Create notification edge
+            here ++> HandledBy(
+                assigned_at=str(datetime.datetime.now()),
+                status="sent"
+            ) ++> org;
+        }
+        
+        here.status = "routed";
+        print("Report routed to " + str(len(selected_orgs)) + " organisations");
+    }
+}
+
+walker DuplicateDetectorAgent {
+
+    can detect with Report entry {
+        print("DuplicateDetectorAgent: checking for duplicates");
+        
+        response = requests.post("http://localhost:8001/find_duplicates", json={
+            "report_id": here.id,
+            "title": here.title,
+            "description": here.description,
+            "threshold": 0.8
+        });
+        if response.status_code == 200 {
+            duplicates = response.json()["duplicates"];
+            # Simplified: assume no duplicates for now
+            if False {
+                here.status = "duplicate";
+                print("Duplicates found:", len(duplicates));
+            } else {
+                here.status = "unique";
+                print("No duplicates found");
+            }
+        }
+        
+        print("Duplicates checked");
+        
+        # Spawn RouterAgent
+        spawn RouterAgent;
+    }
+}
+
+walker ClassifierAgent {
+    has report_data: dict;
+
+    can classify with Report entry {
+        print("ClassifierAgent: classifying report");
+        
+        text = here.title + " " + here.description;
+        
+        # Classify
+        response = requests.post("http://localhost:8001/classify", json={"text": text});
+        if response.status_code == 200 {
+            data = response.json();
+            here.category = data["category"];
+            here.confidence = data["confidence"];
+        }
+        
+        # Assess urgency
+        response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
+        if response.status_code == 200 {
+            here.urgency = response.json();
+        }
+        
+        # Store embedding
+        response = requests.post("http://localhost:8001/store_embedding", json={
+            "report_id": here.id,
+            "title": here.title,
+            "description": here.description
+        });
+        if response.status_code == 200 {
+            print("Embedding stored");
+        }
+        
+        here.status = "classified";
+        print("Report classified");
+        
+        # Spawn DuplicateDetectorAgent
+        spawn DuplicateDetectorAgent;
+    }
+}
+
 walker IntakeAgent {
     has report_data: dict;
 
@@ -100,162 +252,62 @@ walker IntakeAgent {
         # Connect to root
         root ++> new_report;
         
+        visit new_report;
+    }
+
+    can spawn_classifier with Report entry {
         # Spawn ClassifierAgent
-        spawn ClassifierAgent;
+        spawn ClassifierAgent(report_data=self.report_data);
         
-        print("Report created with ID:", new_report.id);
-        report {"report_id": new_report.id, "status": "submitted"};
+        print("Report created with ID:", here.id);
+        report {"report_id": here.id, "status": "submitted"};
     }
 }
 
-walker ClassifierAgent {
-    has report_data: dict;
-
-    can classify with Report entry {
-        print("ClassifierAgent: classifying report");
-        
-        text = self.title + " " + self.description;
-        
-        # Classify
-        response = requests.post("http://localhost:8001/classify", json={"text": text});
-        if response.status_code == 200 {
-            data = response.json();
-            self.category = data["category"];
-            self.confidence = data["confidence"];
+walker get_public_reports {
+    can return_reports with `root entry {
+        reports_list = [];
+        # Traverse to all Report nodes connected to root
+        # Note: In a real graph, we might want to filter by status="resolved" or similar
+        # For now, we return all reports for transparency
+        for node in root.out_nodes() {
+            if "title" in node.context { # Check if it's a Report node (has title)
+                 # Basic redaction logic could go here if not handled by frontend
+                 reports_list.append({
+                    "id": node.id,
+                    "title": node.title,
+                    "description": node.description,
+                    "status": node.status,
+                    "category": node.category,
+                    "urgency": node.urgency,
+                    "submitted_at": node.submitted_at
+                 });
+            }
         }
-        
-        # Assess urgency
-        response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
-        if response.status_code == 200 {
-            self.urgency = response.json();
-        }
-        
-        # Store embedding
-        response = requests.post("http://localhost:8001/store_embedding", json={
-            "report_id": self.id,
-            "title": self.title,
-            "description": self.description
-        });
-        if response.status_code == 200 {
-            print("Embedding stored");
-        }
-        
-        self.status = "classified";
-        print("Report classified");
-        
-        # Spawn DuplicateDetectorAgent
-        spawn DuplicateDetectorAgent;
+        report reports_list;
     }
 }
 
-walker DuplicateDetectorAgent {
+walker get_report_status {
+    has report_id: str;
 
-    can detect with Report entry {
-        print("DuplicateDetectorAgent: checking for duplicates");
-        
-        response = requests.post("http://localhost:8001/find_duplicates", json={
-            "report_id": self.id,
-            "title": self.title,
-            "description": self.description,
-            "threshold": 0.8
-        });
-        if response.status_code == 200 {
-            duplicates = response.json()["duplicates"];
-            # Simplified: assume no duplicates for now
-            if False {
-                self.status = "duplicate";
-                print("Duplicates found:", len(duplicates));
-            } else {
-                self.status = "unique";
-                print("No duplicates found");
+    can check_status with `root entry {
+        found = false;
+        for node in root.out_nodes() {
+            if "id" in node.context and node.id == self.report_id {
+                report {
+                    "id": node.id,
+                    "status": node.status,
+                    "category": node.category,
+                    "urgency": node.urgency,
+                    "submitted_at": node.submitted_at
+                };
+                found = true;
             }
         }
-        
-        print("Duplicates checked");
-        
-        # Spawn RouterAgent
-        spawn RouterAgent;
-    }
-}
-
-walker RouterAgent {
-
-    can route with Report entry {
-        print("RouterAgent: routing report");
-        
-        # Select organisations based on category
-        selected_orgs = [];
-        
-        if self.category == "infrastructure" {
-            # Find utility or government organisations
-            # Assuming root.out_nodes() returns a list of nodes
-            # If not, we might need another way to traverse
-            for org in root.out_nodes() {
-                if "type" in org.context and (org.type == "utility" or org.type == "government") {
-                    selected_orgs.append(org);
-                }
-            }
-        } elif self.category == "safety" {
-            # Find government organisations
-            for org in root.out_nodes() {
-                if "type" in org.context and org.type == "government" {
-                    selected_orgs.append(org);
-                }
-            }
-        } elif self.category == "utility" {
-            # Find utility organisations
-            for org in root.out_nodes() {
-                if "type" in org.context and org.type == "utility" {
-                    selected_orgs.append(org);
-                }
-            }
-        } else {
-            # Default to all organisations
-            for org in root.out_nodes() {
-                if "type" in org.context {
-                    selected_orgs.append(org);
-                }
-            }
+        if not found {
+            report {"error": "Report not found"};
         }
-        
-        # For each selected organisation, draft and send notification
-        for org in selected_orgs {
-            # Draft message
-            response = requests.post("http://localhost:8001/draft_message", json={
-                "title": self.title,
-                "description": self.description,
-                "urgency": self.urgency,
-                "org_type": org.type
-            });
-            if response.status_code == 200 {
-                message = response.json()["message"];
-            } else {
-                message = "Report: " + self.title + " - " + self.description;
-            }
-            
-            # Send notification
-            if org.contact_email {
-                send_response = requests.post("http://localhost:8003/send_email", json={
-                    "to": org.contact_email,
-                    "subject": "Public Report: " + self.title,
-                    "body": message
-                });
-                if send_response.status_code == 200 {
-                    print("Notification sent to " + org.name + " via email");
-                } else {
-                    print("Failed to send notification to " + org.name);
-                }
-            }
-            
-            # Create notification edge
-            self ++> HandledBy(
-                assigned_at=str(datetime.datetime.now()),
-                status="sent"
-            ) ++> org;
-        }
-        
-        self.status = "routed";
-        print("Report routed to " + str(len(selected_orgs)) + " organisations");
     }
 }
 

@@ -1,5 +1,5 @@
 # Dockerfile for React frontend
-FROM node:16-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY frontend/package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm config set fetch-retry-maxtimeout 600000 && npm install
 
 # Copy source
 COPY frontend/ ./

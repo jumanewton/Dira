@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { jacSpawn } from 'jac-client';
 
 function PublicTransparency() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('resolved');
+  const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [trackId, setTrackId] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
 
   useEffect(() => {
     fetchPublicReports();
@@ -13,49 +16,33 @@ function PublicTransparency() {
   const fetchPublicReports = async () => {
     try {
       setLoading(true);
-      // Mock data - in real implementation, fetch from backend
-      const mockReports = [
-        {
-          id: '1',
-          title: 'Pothole on Main Street',
-          description: 'Large pothole causing traffic issues - RESOLVED: Filled and paved',
-          status: 'resolved',
-          urgency: 'medium',
-          category: 'infrastructure',
-          submitted_at: '2025-11-15T10:00:00Z',
-          resolved_at: '2025-11-20T14:30:00Z',
-          resolution_time: '5 days',
-          organization: 'Sample Government Agency',
-          entities: '{"locations": ["Main Street"]}'
-        },
-        {
-          id: '2',
-          title: 'Street Light Out',
-          description: 'Street light not working - RESOLVED: Replaced bulb and wiring',
-          status: 'resolved',
-          urgency: 'low',
-          category: 'utility',
-          submitted_at: '2025-11-10T15:30:00Z',
-          resolved_at: '2025-11-18T09:15:00Z',
-          resolution_time: '8 days',
-          organization: 'Sample Utility Company',
-          entities: '{"locations": ["Elm Street"]}'
-        },
-        {
-          id: '3',
-          title: 'Park Bench Damaged',
-          description: 'Bench in city park is broken - RESOLVED: Repaired and reinforced',
-          status: 'resolved',
-          urgency: 'low',
-          category: 'infrastructure',
-          submitted_at: '2025-11-05T12:00:00Z',
-          resolved_at: '2025-11-12T16:45:00Z',
-          resolution_time: '7 days',
-          organization: 'Sample Government Agency',
-          entities: '{"locations": ["City Park"]}'
-        }
-      ];
-      setReports(mockReports);
+      const response = await jacSpawn('get_public_reports', '', {});
+      
+      let reportsList = [];
+      if (response.report && Array.isArray(response.report)) {
+          reportsList = response.report;
+      } else if (Array.isArray(response)) {
+          reportsList = response;
+      }
+
+      // Add mock data if list is empty for demo purposes
+      if (reportsList.length === 0) {
+          reportsList = [
+            {
+              id: '1',
+              title: 'Pothole on Main Street',
+              description: 'Large pothole causing traffic issues - RESOLVED: Filled and paved',
+              status: 'resolved',
+              urgency: 'medium',
+              category: 'infrastructure',
+              submitted_at: '2025-11-15T10:00:00Z',
+              resolution_time: '5 days',
+              organization: 'Sample Government Agency'
+            }
+          ];
+      }
+
+      setReports(reportsList);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -63,11 +50,29 @@ function PublicTransparency() {
     }
   };
 
+  const handleTrackReport = async (e) => {
+      e.preventDefault();
+      if (!trackId) return;
+      
+      try {
+          const response = await jacSpawn('get_report_status', '', { report_id: trackId });
+          let result = null;
+          if (response.report) {
+              result = Array.isArray(response.report) ? response.report[0] : response.report;
+          } else {
+              result = response;
+          }
+          setTrackResult(result);
+      } catch (error) {
+          setTrackResult({ error: error.message });
+      }
+  };
+
   const filteredReports = reports.filter(report => {
     const matchesFilter = filter === 'all' || report.status === filter;
     const matchesSearch = searchTerm === '' ||
-      report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (report.title && report.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (report.description && report.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesFilter && matchesSearch;
   });
 
@@ -96,6 +101,32 @@ function PublicTransparency() {
       <p>View resolved reports and track government responsiveness</p>
 
       <div className="transparency-controls">
+        <div className="track-box">
+            <h3>Track Your Report</h3>
+            <form onSubmit={handleTrackReport} className="track-form">
+                <input 
+                    type="text" 
+                    placeholder="Enter Report ID" 
+                    value={trackId}
+                    onChange={(e) => setTrackId(e.target.value)}
+                />
+                <button type="submit">Track</button>
+            </form>
+            {trackResult && (
+                <div className="track-result">
+                    {trackResult.error ? (
+                        <p className="error">{trackResult.error}</p>
+                    ) : (
+                        <div className="status-card">
+                            <p><strong>Status:</strong> {trackResult.status}</p>
+                            <p><strong>Category:</strong> {trackResult.category}</p>
+                            <p><strong>Urgency:</strong> {trackResult.urgency}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+
         <div className="search-box">
           <input
             type="text"

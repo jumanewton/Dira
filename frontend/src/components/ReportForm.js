@@ -17,7 +17,7 @@ function ReportForm() {
 
     try {
       // Call IntakeAgent walker
-      const result = await jacSpawn('IntakeAgent', '', {
+      const response = await jacSpawn('IntakeAgent', '', {
         report_data: {
           title: formData.title,
           description: formData.description,
@@ -26,7 +26,19 @@ function ReportForm() {
         }
       });
 
-      setStatus(`Report submitted successfully! ID: ${result.report_id}`);
+      console.log("Submission response:", response);
+      
+      // Handle different response structures
+      let reportId = "Unknown";
+      if (response.report_id) {
+          reportId = response.report_id;
+      } else if (Array.isArray(response) && response.length > 0 && response[0].report_id) {
+          reportId = response[0].report_id;
+      } else if (response.report && Array.isArray(response.report) && response.report.length > 0) {
+          reportId = response.report[0].report_id;
+      }
+
+      setStatus(`Report submitted successfully! ID: ${reportId}`);
       // Reset form
       setFormData({
         title: '',

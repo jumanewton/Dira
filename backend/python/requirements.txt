@@ -7,7 +7,6 @@
 # byllm
 # jaseci
 
-torch --index-url https://download.pytorch.org/whl/cpu
 transformers
 spacy
 sentence-transformers
