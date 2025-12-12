@@ -3,7 +3,7 @@ import json
 import time
 
 JASECI_URL = "http://localhost:8002"
-USER_EMAIL = "admin@publiclens.com"
+USER_EMAIL = "admin@dira.com"
 USER_PASSWORD = "password123"
 
 def get_auth_token():

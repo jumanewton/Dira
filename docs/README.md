@@ -1,7 +1,7 @@
-# PublicLens - Feedback and Issue-Tracking Platform
+# Dira - Feedback and Issue-Tracking Platform
 
 ## Overview
-PublicLens is a feedback and issue-tracking platform for government organisations and public utilities. It uses Jaseci's Jac language with OSP graphs and byLLM agents to process, classify, and route public reports efficiently.
+Dira is a feedback and issue-tracking platform for government organisations and public utilities. It uses Jaseci's Jac language with OSP graphs and byLLM agents to process, classify, and route public reports efficiently.
 
 ## Features
 - Anonymous or named report submissions
@@ -118,7 +118,7 @@ The frontend is configured to automatically log in as the admin user for demonst
 
 ## Demo Credentials
 The system uses a default admin account for the demo:
-- **Username**: `admin@publiclens.com`
+- **Username**: `admin@dira.com`
 - **Password**: `password123`
 
 Features include:
@@ -145,7 +145,7 @@ Features include:
 
 ## Project Structure
 ```
-publiclens/
+dira/
 ├── backend/
 │   ├── jac/          # Jac source files
 │   └── python/       # Python microservices

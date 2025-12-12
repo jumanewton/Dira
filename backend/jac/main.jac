@@ -1,4 +1,4 @@
-# Main entry point for PublicLens
+# Main entry point for Dira
 
 import uuid;
 import datetime;
@@ -463,6 +463,6 @@ with entry {
 
     root ++> routing_policy;
 
-    print("PublicLens OSP graph initialized");
+    print("Dira OSP graph initialized");
     print("Organisations:", gov_org.name, utility_org.name);
 }

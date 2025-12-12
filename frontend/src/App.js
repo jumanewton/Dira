@@ -22,7 +22,7 @@ function App() {
         const response = await fetch('/user/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: "admin@publiclens.com", password: "password123" })
+            body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
         });
         
         if (response.ok) {
@@ -36,14 +36,14 @@ function App() {
              const createResponse = await fetch('/user/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: "admin@publiclens.com", password: "password123" })
+                body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
             });
             if (createResponse.ok) {
                 // Login again
                  const loginResponse = await fetch('/user/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: "admin@publiclens.com", password: "password123" })
+                    body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
                 });
                 if (loginResponse.ok) {
                     const data = await loginResponse.json();
@@ -62,7 +62,7 @@ function App() {
   }, []);
 
   if (!isLoggedIn) {
-      return <div className="loading">Initializing PublicLens...</div>;
+      return <div className="loading">Initializing Dira...</div>;
   }
 
   return (
@@ -70,7 +70,7 @@ function App() {
       <div className="App">
         <nav className="navbar">
           <div className="nav-brand">
-            <Link to="/">PublicLens</Link>
+            <Link to="/">Dira</Link>
           </div>
           <ul className="nav-links">
             <li><Link to="/">Report Issue</Link></li>
