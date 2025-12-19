@@ -346,6 +346,7 @@ walker get_org_reports {
 
 walker get_analytics {
     has metrics: dict = {};
+    has temp_monthly_data: dict = {};
 
     can start_traversal with `root entry {
         visit [-->];
@@ -360,11 +361,7 @@ walker get_analytics {
                 "reportsByUrgency": {},
                 "reportsByStatus": {},
                 "avgResolutionTime": 5.0,
-                "monthlyTrend": [
-                  { "month": "Oct", "reports": 34, "resolved": 28 },
-                  { "month": "Nov", "reports": 45, "resolved": 32 },
-                  { "month": "Dec", "reports": 77, "resolved": 29 }
-                ]
+                "monthlyTrend": []
              };
         }
 
@@ -394,6 +391,29 @@ walker get_analytics {
         } else {
             self.metrics["reportsByStatus"][here.status] = 1;
         }
+
+        # Monthly Trend
+        try {
+            date_str = here.submitted_at;
+            # Handle potential format variations (remove microseconds if present)
+            if "." in date_str {
+                date_str = date_str.split(".")[0];
+            }
+            # Parse date
+            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S");
+            month = dt.strftime("%b");
+            
+            if month not in self.temp_monthly_data {
+                self.temp_monthly_data[month] = {"month": month, "reports": 0, "resolved": 0};
+            }
+            
+            self.temp_monthly_data[month]["reports"] += 1;
+            if here.status == "resolved" {
+                self.temp_monthly_data[month]["resolved"] += 1;
+            }
+        } except Exception as e {
+            print(f"Error parsing date for analytics: {e}");
+        }
     }
 
     can return_metrics with exit {
@@ -408,6 +428,12 @@ walker get_analytics {
                 "monthlyTrend": []
              };
         }
+
+        # Populate monthlyTrend from temp data
+        for m in self.temp_monthly_data {
+            self.metrics["monthlyTrend"].append(self.temp_monthly_data[m]);
+        }
+
         report self.metrics;
     }
 }
