@@ -15,7 +15,9 @@ function Analytics() {
       const response = await jacSpawn('get_analytics', '', {});
       
       let data = {};
-      if (response.report) {
+      if (response.reports) {
+          data = Array.isArray(response.reports) ? response.reports[0] : response.reports;
+      } else if (response.report) {
           // If report is a list (common in Jac), take the first item
           data = Array.isArray(response.report) ? response.report[0] : response.report;
       } else {

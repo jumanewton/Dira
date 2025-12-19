@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { jacSpawn } from 'jac-client';
+import { runWalker } from '../jacService';
 
 function ReportForm() {
   const [formData, setFormData] = useState({
@@ -17,7 +17,7 @@ function ReportForm() {
 
     try {
       // Call IntakeAgent walker
-      const response = await jacSpawn('IntakeAgent', '', {
+      const response = await runWalker('IntakeAgent', {
         report_data: {
           title: formData.title,
           description: formData.description,
@@ -36,6 +36,8 @@ function ReportForm() {
           reportId = response[0].report_id;
       } else if (response.report && Array.isArray(response.report) && response.report.length > 0) {
           reportId = response.report[0].report_id;
+      } else if (response.reports && Array.isArray(response.reports) && response.reports.length > 0) {
+          reportId = response.reports[0].report_id;
       }
 
       setStatus(`Report submitted successfully! ID: ${reportId}`);

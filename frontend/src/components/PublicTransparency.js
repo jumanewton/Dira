@@ -19,7 +19,9 @@ function PublicTransparency() {
       const response = await runWalker('get_public_reports', {});
       
       let reportsList = [];
-      if (response.report && Array.isArray(response.report)) {
+      if (response.reports && Array.isArray(response.reports)) {
+          reportsList = Array.isArray(response.reports[0]) ? response.reports[0] : response.reports;
+      } else if (response.report && Array.isArray(response.report)) {
           // Jac returns a list of reports, so we need to take the first element if it's a list of lists
           // response.report is typically [[{...}, {...}]]
           reportsList = Array.isArray(response.report[0]) ? response.report[0] : response.report;
