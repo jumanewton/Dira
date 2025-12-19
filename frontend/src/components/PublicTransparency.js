@@ -61,11 +61,19 @@ function PublicTransparency() {
       try {
           const response = await runWalker('get_report_status', { report_id: trackId });
           let result = null;
-          if (response.report) {
-              result = Array.isArray(response.report) ? response.report[0] : response.report;
+          
+          // Check for reports array (standard Jac response)
+          if (response.reports && Array.isArray(response.reports) && response.reports.length > 0) {
+              result = response.reports[0];
+          } else if (response.report && Array.isArray(response.report) && response.report.length > 0) {
+              result = response.report[0];
+          } else if (response.result && response.result.found_report && Object.keys(response.result.found_report).length > 0) {
+              // Fallback: check if found_report is in the result object (if reports array is empty)
+              result = response.result.found_report;
           } else {
-              result = response;
+              result = { error: "Report not found" };
           }
+          
           setTrackResult(result);
       } catch (error) {
           setTrackResult({ error: error.message });
@@ -73,6 +81,11 @@ function PublicTransparency() {
   };
 
   const filteredReports = reports.filter(report => {
+    // If a report is being tracked and found, filter to show only that report
+    if (trackResult && trackResult.id && !trackResult.error) {
+        return report.id === trackResult.id;
+    }
+
     const matchesFilter = filter === 'all' || report.status === filter;
     const matchesSearch = searchTerm === '' ||
       (report.title && report.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -112,7 +125,11 @@ function PublicTransparency() {
                     type="text" 
                     placeholder="Enter Report ID" 
                     value={trackId}
-                    onChange={(e) => setTrackId(e.target.value)}
+                    onChange={(e) => {
+                        setTrackId(e.target.value);
+                        // Clear track result when user types to reset filter
+                        if (trackResult) setTrackResult(null);
+                    }}
                 />
                 <button type="submit">Track</button>
             </form>
