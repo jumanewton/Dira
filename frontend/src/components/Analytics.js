@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { jacSpawn } from 'jac-client';
+import { runWalker } from '../jacService';
 
 function Analytics() {
   const [metrics, setMetrics] = useState({});
@@ -12,14 +12,15 @@ function Analytics() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await jacSpawn('get_analytics', '', {});
+      const response = await runWalker('get_analytics', {});
       
       let data = {};
-      if (response.reports) {
-          data = Array.isArray(response.reports) ? response.reports[0] : response.reports;
-      } else if (response.report) {
-          // If report is a list (common in Jac), take the first item
-          data = Array.isArray(response.report) ? response.report[0] : response.report;
+      if (response.reports && Array.isArray(response.reports) && response.reports.length > 0) {
+          data = response.reports[0];
+      } else if (response.report && Array.isArray(response.report) && response.report.length > 0) {
+          data = response.report[0];
+      } else if (response.result && response.result.metrics) {
+          data = response.result.metrics;
       } else {
           data = response;
       }
