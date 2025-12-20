@@ -128,20 +128,6 @@ Features include:
 - Analytics dashboard with metrics and charts
 - Privacy controls with automatic data redaction
 
-## Current Status
-- ✅ Jac OSP graph with nodes (Organisation, Report, etc.) and edges
-- ✅ Basic multi-agent walkers (IntakeAgent, ClassifierAgent, DuplicateDetectorAgent, RouterAgent)
-- ✅ Graph initialization with sample data
-- ✅ NLP service with entity extraction, classification, and message drafting
-- ✅ Vector database integration with Weaviate
-- ✅ Duplicate detection using semantic search
-- ✅ Automated routing and notification system
-- ✅ Environment configuration with .env support
-- ✅ Organization dashboard with report management
-- ✅ Public transparency view with resolved reports
-- ✅ Privacy controls and data redaction
-- ✅ Analytics dashboard with metrics and insights
-- ✅ Frontend Jac Client integration (Auto-login enabled)
 
 ## Project Structure
 ```

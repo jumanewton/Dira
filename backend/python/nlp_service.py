@@ -9,7 +9,7 @@ import json
 import os
 import sys
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 # Add project root to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -26,9 +26,8 @@ CACHE_DIR = os.getenv("HUGGINGFACE_CACHE_DIR", "./models_cache")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    # Use Gemini 3 Pro (Preview)
-    gemini_model = genai.GenerativeModel('gemini-3.0-pro-preview') 
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+    GEMINI_MODEL_NAME = 'gemini-3.0-pro-preview'
 else:
     print("Warning: GEMINI_API_KEY not found. Falling back to local models where possible, or failing.")
 
@@ -84,7 +83,10 @@ def classify(request: ClassifyRequest):
             
             Report: {text}"""
             
-            response = gemini_model.generate_content(prompt)
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
             # Simple parsing - in production use structured output or robust JSON parsing
             import re
             match = re.search(r'\{.*\}', response.text, re.DOTALL)
@@ -122,7 +124,10 @@ def assess_urgency(request: UrgencyRequest):
             Return only the urgency level string.
             
             Report: {text}"""
-            response = gemini_model.generate_content(prompt)
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
             urgency = response.text.strip().lower()
             if urgency in ["low", "medium", "high"]:
                 return urgency
@@ -178,7 +183,10 @@ def draft_message(request: DraftMessageRequest):
     message = ""
     if GEMINI_API_KEY:
         try:
-            response = gemini_model.generate_content(prompt)
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
             message = response.text.strip()
         except Exception as e:
             print(f"Gemini drafting failed: {e}")
