@@ -37,7 +37,7 @@ else:
 nlp = spacy.load("en_core_web_sm")
 # classifier = pipeline("text-classification", model="microsoft/DialoGPT-medium", cache_dir=CACHE_DIR) # Replaced by Gemini
 # message_drafter = pipeline("text-generation", model="gpt2", cache_dir=CACHE_DIR) # Replaced by Gemini
-embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=CACHE_DIR) # Keep local embedding for now or switch to Gemini embedding
+embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=CACHE_DIR) 
 
 try:
     client = weaviate.Client(url=WEAVIATE_URL)
