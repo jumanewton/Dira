@@ -7,6 +7,9 @@ set -euo pipefail
 #   ./serve.sh 8002
 # Default port is 8002.
 
+# Ensure we are in the script's directory
+cd "$(dirname "$0")"
+
 PORT=${1:-8002}
 
 echo "[jac] Running 'jac check' to show diagnostics (if any)..."

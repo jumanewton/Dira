@@ -161,8 +161,8 @@ walker DuplicateDetectorAgent {
         });
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
-            # Simplified: assume no duplicates for now
-            if False {
+            
+            if len(duplicates) > 0 {
                 here.status = "duplicate";
                 print("Duplicates found:", len(duplicates));
             } else {

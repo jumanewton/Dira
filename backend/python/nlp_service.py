@@ -170,6 +170,40 @@ def store_embedding(request: StoreEmbeddingRequest):
     }, COLLECTION_NAME, vector=embedding)
     return {"status": "stored"}
 
+class FindDuplicatesRequest(BaseModel):
+    report_id: str
+    title: str
+    description: str
+    threshold: float = 0.8
+
+@app.post("/find_duplicates")
+def find_duplicates(request: FindDuplicatesRequest):
+    if not client:
+        return {"duplicates": []}
+        
+    text = request.title + " " + request.description
+    embedding = embedding_model.encode(text).tolist()
+    
+    response = (
+        client.query
+        .get(COLLECTION_NAME, ["report_id", "title", "description"])
+        .with_near_vector({
+            "vector": embedding,
+            "certainty": request.threshold
+        })
+        .with_limit(5)
+        .do()
+    )
+    
+    duplicates = []
+    if "data" in response and "Get" in response["data"] and COLLECTION_NAME in response["data"]["Get"]:
+        results = response["data"]["Get"][COLLECTION_NAME]
+        for res in results:
+            if res["report_id"] != request.report_id:
+                duplicates.append(res)
+                
+    return {"duplicates": duplicates}
+
 class DraftMessageRequest(BaseModel):
     title: str
     description: str
