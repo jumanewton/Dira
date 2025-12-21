@@ -374,17 +374,22 @@ walker get_org_reports {
     }
 
     can collect_reports with Report entry {
-        # TEMPORARY FIX: Show all reports for any org to ensure UI visibility during demo
-        self.reports_list.append({
-            "id": here.id,
-            "title": here.title,
-            "description": here.description,
-            "status": here.status,
-            "category": here.category,
-            "urgency": here.urgency,
-            "submitted_at": here.submitted_at,
-            "entities": here.entities
-        });
+        # Filter out duplicates
+        if here.status == "duplicate" {
+            # Skip this report
+        } else {
+            # TEMPORARY FIX: Show all reports for any org to ensure UI visibility during demo
+            self.reports_list.append({
+                "id": here.id,
+                "title": here.title,
+                "description": here.description,
+                "status": here.status,
+                "category": here.category,
+                "urgency": here.urgency,
+                "submitted_at": here.submitted_at,
+                "entities": here.entities
+            });
+        }
     }
 
     can return_reports with exit {
@@ -404,6 +409,8 @@ walker get_analytics {
         if "totalReports" not in self.metrics {
              self.metrics = {
                 "totalReports": 0,
+                "uniqueReports": 0,
+                "duplicateReports": 0,
                 "resolvedReports": 0,
                 "reportsByCategory": {},
                 "reportsByUrgency": {},
@@ -413,54 +420,63 @@ walker get_analytics {
              };
         }
 
+        # Count ALL submissions
         self.metrics["totalReports"] += 1;
-        
-        if here.status == "resolved" {
-            self.metrics["resolvedReports"] += 1;
-        }
-        
-        # Category
-        if here.category in self.metrics["reportsByCategory"] {
-            self.metrics["reportsByCategory"][here.category] += 1;
-        } else {
-            self.metrics["reportsByCategory"][here.category] = 1;
-        }
-        
-        # Urgency
-        if here.urgency in self.metrics["reportsByUrgency"] {
-            self.metrics["reportsByUrgency"][here.urgency] += 1;
-        } else {
-            self.metrics["reportsByUrgency"][here.urgency] = 1;
-        }
-        
-        # Status
-        if here.status in self.metrics["reportsByStatus"] {
-            self.metrics["reportsByStatus"][here.status] += 1;
-        } else {
-            self.metrics["reportsByStatus"][here.status] = 1;
-        }
 
-        # Monthly Trend
-        try {
-            date_str = here.submitted_at;
-            # Handle potential format variations (remove microseconds if present)
-            if "." in date_str {
-                date_str = date_str.split(".")[0];
-            }
-            # Parse date
-            dt = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S");
-            month = dt.strftime("%b");
+        if here.status == "duplicate" {
+            self.metrics["duplicateReports"] += 1;
+            # Don't process duplicates for other metrics
+        } else {
+            # Process UNIQUE reports
+            self.metrics["uniqueReports"] += 1;
             
-            if month not in self.temp_monthly_data {
-                self.temp_monthly_data[month] = {"month": month, "reports": 0, "resolved": 0};
-            }
-            
-            self.temp_monthly_data[month]["reports"] += 1;
             if here.status == "resolved" {
-                self.temp_monthly_data[month]["resolved"] += 1;
+                self.metrics["resolvedReports"] += 1;
             }
-        } except Exception as e {
-            print(f"Error parsing date for analytics: {e}");
+            
+            # Category
+            if here.category in self.metrics["reportsByCategory"] {
+                self.metrics["reportsByCategory"][here.category] += 1;
+            } else {
+                self.metrics["reportsByCategory"][here.category] = 1;
+            }
+            
+            # Urgency
+            if here.urgency in self.metrics["reportsByUrgency"] {
+                self.metrics["reportsByUrgency"][here.urgency] += 1;
+            } else {
+                self.metrics["reportsByUrgency"][here.urgency] = 1;
+            }
+            
+            # Status
+            if here.status in self.metrics["reportsByStatus"] {
+                self.metrics["reportsByStatus"][here.status] += 1;
+            } else {
+                self.metrics["reportsByStatus"][here.status] = 1;
+            }
+
+            # Monthly Trend
+            try {
+                date_str = here.submitted_at;
+                # Handle potential format variations (remove microseconds if present)
+                if "." in date_str {
+                    date_str = date_str.split(".")[0];
+                }
+                # Parse date
+                dt = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S");
+                month = dt.strftime("%b");
+                
+                if month not in self.temp_monthly_data {
+                    self.temp_monthly_data[month] = {"month": month, "reports": 0, "resolved": 0};
+                }
+                
+                self.temp_monthly_data[month]["reports"] += 1;
+                if here.status == "resolved" {
+                    self.temp_monthly_data[month]["resolved"] += 1;
+                }
+            } except Exception as e {
+                print(f"Error parsing date for analytics: {e}");
+            }
         }
     }
 
@@ -468,6 +484,8 @@ walker get_analytics {
         if not self.metrics {
              self.metrics = {
                 "totalReports": 0,
+                "uniqueReports": 0,
+                "duplicateReports": 0,
                 "resolvedReports": 0,
                 "reportsByCategory": {},
                 "reportsByUrgency": {},

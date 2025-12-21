@@ -28,6 +28,8 @@ function Analytics() {
       // Ensure default values to prevent crashes
       const safeData = {
           totalReports: data.totalReports || 0,
+          uniqueReports: data.uniqueReports || 0,
+          duplicateReports: data.duplicateReports || 0,
           resolvedReports: data.resolvedReports || 0,
           avgResolutionTime: data.avgResolutionTime || 0,
           reportsByCategory: data.reportsByCategory || {},
@@ -42,6 +44,8 @@ function Analytics() {
       // Set empty defaults on error
       setMetrics({
           totalReports: 0,
+          uniqueReports: 0,
+          duplicateReports: 0,
           resolvedReports: 0,
           avgResolutionTime: 0,
           reportsByCategory: {},
@@ -135,7 +139,9 @@ function Analytics() {
     return <div className="loading">Loading analytics...</div>;
   }
 
-  const resolutionRate = ((metrics.resolvedReports / metrics.totalReports) * 100).toFixed(1);
+  const resolutionRate = metrics.uniqueReports > 0 
+    ? ((metrics.resolvedReports / metrics.uniqueReports) * 100).toFixed(1) 
+    : "0.0";
 
   return (
     <div className="analytics">
@@ -145,7 +151,15 @@ function Analytics() {
       <div className="metrics-overview">
         <div className="metric-card">
           <h2>{metrics.totalReports}</h2>
-          <p>Total Reports</p>
+          <p>Total Submissions</p>
+        </div>
+        <div className="metric-card">
+          <h2>{metrics.uniqueReports}</h2>
+          <p>Unique Issues</p>
+        </div>
+        <div className="metric-card">
+          <h2>{metrics.duplicateReports}</h2>
+          <p>Duplicates</p>
         </div>
         <div className="metric-card">
           <h2>{metrics.resolvedReports}</h2>
