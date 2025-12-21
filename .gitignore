@@ -62,7 +62,7 @@ __jac_gen__/
 *.jir
 
 # Model Cache
-models_cache/*
+models_cache/
 *.lock
 *.safetensors
 docs/todo.md
