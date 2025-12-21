@@ -181,6 +181,8 @@ class FindDuplicatesRequest(BaseModel):
     description: str
     threshold: float = 0.8
 
+@app.post("/find_duplicates")
+def find_duplicates(request: FindDuplicatesRequest):
     # print(f"Finding duplicates for report {request.report_id} with threshold {request.threshold}")
     if not client:
         # print("Weaviate client not available")
