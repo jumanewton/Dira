@@ -67,7 +67,7 @@ edge HandledBy {}
 
 # Walker definitions
 
-walker RouterAgent {
+walker RouterWalker {
 
     can route with Report entry {
         if here.status == "duplicate" {
@@ -178,8 +178,8 @@ walker DuplicateDetectorAgent {
         }
         
         
-        # Spawn RouterAgent
-        spawn RouterAgent();
+        # Spawn RouterWalker
+        spawn RouterWalker;
 
         report {"report_id": here.id, "status": here.status};
     }
@@ -263,6 +263,8 @@ walker IntakeAgent {
         
         # Connect to root
         root ++> new_report;
+
+        report {"report_id": new_report.id};
         
         visit new_report;
     }
@@ -318,8 +320,8 @@ walker IntakeAgent {
             } else {
                 here.status = "unique";
                 
-                # Spawn RouterAgent if unique
-                spawn RouterAgent();
+                # Spawn RouterWalker if unique
+                spawn RouterWalker;
             }
         } else {
         }
