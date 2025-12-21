@@ -465,17 +465,9 @@ walker CleanupDuplicates {
             # However, if we mark it unique here, we might overwrite a correct "duplicate" status if our logic is flawed.
             # But the user asked to clean old data which is INCORRECTLY unique.
             
-            # So we treat 'r' as the "original" because it's the oldest unseen one.
-            if r.status == "duplicate" {
-                # If it was already duplicate, we might want to keep it that way, 
-                # OR we might want to re-check if it's actually unique (maybe the original was deleted?).
-                # For safety, let's assume if it's duplicate, it's duplicate.
-                processed_ids.append(r.id);
-                continue;
-            }
-
             # It is currently unique or submitted.
             processed_ids.append(r.id);
+            r.status = "unique";
 
             try {
                 response = requests.post("http://localhost:8001/find_duplicates", json={
