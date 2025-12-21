@@ -102,26 +102,15 @@ chmod +x serve.sh
 ./serve.sh
 ```
 
-**Seed Data** (Important for Demo):
-Populate the graph with sample reports and create the admin user.
-```bash
-cd backend/python
-python seed_data.py
-```
+
 
 **Frontend** (port 3000):
 ```bash
 cd frontend
 npm start
 ```
-The frontend is configured to automatically log in as the admin user for demonstration purposes.
 
-## Demo Credentials
-The system uses a default admin account for the demo:
-- **Username**: `admin@dira.com`
-- **Password**: `password123`
-
-Features include:
+## Features include:
 - Report submission form with anonymous option
 - Organization dashboard for managing assigned reports
 - Public transparency view of resolved issues
@@ -141,7 +130,3 @@ dira/
 ├── docs/             # Documentation
 └── tests/            # Test files
 ```
-
-
-## License
-MIT
