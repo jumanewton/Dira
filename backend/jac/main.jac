@@ -70,6 +70,11 @@ edge HandledBy {}
 walker RouterAgent {
 
     can route with Report entry {
+        if here.status == "duplicate" {
+            print("RouterAgent: Report is a duplicate. Skipping routing.");
+            disengage;
+        }
+
         print("RouterAgent: routing report");
         
         # Select organisations based on category
@@ -150,6 +155,10 @@ walker RouterAgent {
 
 walker DuplicateDetectorAgent {
 
+    can start_traversal with `root entry {
+        visit [-->];
+    }
+
     can detect with Report entry {
         print("DuplicateDetectorAgent: checking for duplicates");
         
@@ -179,6 +188,13 @@ walker DuplicateDetectorAgent {
 }
 
 walker ClassifierAgent {
+    has report_node: node;
+
+    can start_at_node with entry {
+        if self.report_node {
+            visit self.report_node;
+        }
+    }
 
     can classify with Report entry {
         print("ClassifierAgent: classifying report");
@@ -255,8 +271,38 @@ walker IntakeAgent {
     }
 
     can spawn_classifier with Report entry {
-        # Spawn ClassifierAgent
-        spawn ClassifierAgent;
+        print("IntakeAgent: classifying report");
+        text = here.title + " " + here.description;
+        
+        # Classify
+        response = requests.post("http://localhost:8001/classify", json={"text": text});
+        if response.status_code == 200 {
+            data = response.json();
+            here.category = data["category"];
+            here.confidence = data["confidence"];
+        }
+        
+        # Assess urgency
+        response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
+        if response.status_code == 200 {
+            here.urgency = response.json();
+        }
+        
+        # Store embedding
+        response = requests.post("http://localhost:8001/store_embedding", json={
+            "report_id": here.id,
+            "title": here.title,
+            "description": here.description
+        });
+        if response.status_code == 200 {
+            print("Embedding stored");
+        }
+        
+        here.status = "classified";
+        print("Report classified");
+
+        # Spawn DuplicateDetectorAgent
+        spawn DuplicateDetectorAgent;
         
         print("Report created with ID:", here.id);
         report {"report_id": here.id, "status": "submitted"};
@@ -271,15 +317,17 @@ walker get_public_reports {
     }
 
     can collect_report with Report entry {
-        self.reports_list.append({
-            "id": here.id,
-            "title": here.title,
-            "description": here.description,
-            "status": here.status,
-            "category": here.category,
-            "urgency": here.urgency,
-            "submitted_at": here.submitted_at
-        });
+        if here.status != "duplicate" {
+            self.reports_list.append({
+                "id": here.id,
+                "title": here.title,
+                "description": here.description,
+                "status": here.status,
+                "category": here.category,
+                "urgency": here.urgency,
+                "submitted_at": here.submitted_at
+            });
+        }
     }
 
     can return_reports with exit {
