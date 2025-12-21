@@ -49,7 +49,6 @@ edge ReportsOf {
 }
 
 with entry {
-    print("Models loaded");
 }
 
 edge EscalatesTo {

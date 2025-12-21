@@ -28,7 +28,7 @@ function App() {
         if (response.ok) {
             const data = await response.json();
             const token = data.token;
-            console.log("Logged in as admin. Token:", token);
+            // console.log("Logged in as admin. Token:", token);
             localStorage.setItem('jac_token', token);
             setIsLoggedIn(true);
         } else {

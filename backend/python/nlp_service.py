@@ -31,7 +31,8 @@ if GEMINI_API_KEY:
     GEMINI_MODEL_NAME = 'gemini-2.5-flash' 
 
 else:
-    print("Warning: GEMINI_API_KEY not found. Falling back to local models where possible, or failing.")
+    # print("Warning: GEMINI_API_KEY not found. Falling back to local models where possible, or failing.")
+    pass
 
 # Load models with cache directory
 nlp = spacy.load("en_core_web_sm")
@@ -53,7 +54,7 @@ try:
             "vectorizer": "none"  # we'll provide vectors
         })
 except Exception as e:
-    print(f"Warning: Could not connect to Weaviate at {WEAVIATE_URL}. Vector DB features will be disabled. Error: {e}")
+    # print(f"Warning: Could not connect to Weaviate at {WEAVIATE_URL}. Vector DB features will be disabled. Error: {e}")
     client = None
 
 from pydantic import BaseModel
@@ -96,7 +97,8 @@ def classify(request: ClassifyRequest):
                 data = json.loads(match.group(0))
                 return data
         except Exception as e:
-            print(f"Gemini classification failed: {e}")
+            # print(f"Gemini classification failed: {e}")
+            pass
 
     # Fallback to keyword-based classification
     text_lower = text.lower()
@@ -111,7 +113,7 @@ def classify(request: ClassifyRequest):
     else:
         category = "general"
     
-    confidence = 0.7  # Placeholder confidence
+    confidence = 0.7  # confidence
     return {"category": category, "confidence": confidence}
 
 class UrgencyRequest(BaseModel):
@@ -134,7 +136,8 @@ def assess_urgency(request: UrgencyRequest):
             if urgency in ["low", "medium", "high"]:
                 return urgency
         except Exception as e:
-            print(f"Gemini urgency assessment failed: {e}")
+            # print(f"Gemini urgency assessment failed: {e}")
+            pass
 
     # Simple keyword-based urgency
     urgent_keywords = ["emergency", "urgent", "critical", "danger"]
@@ -178,9 +181,9 @@ class FindDuplicatesRequest(BaseModel):
     description: str
     threshold: float = 0.8
 
-@app.post("/find_duplicates")
-def find_duplicates(request: FindDuplicatesRequest):
+    # print(f"Finding duplicates for report {request.report_id} with threshold {request.threshold}")
     if not client:
+        # print("Weaviate client not available")
         return {"duplicates": []}
         
     text = request.title + " " + request.description
@@ -193,17 +196,24 @@ def find_duplicates(request: FindDuplicatesRequest):
             "vector": embedding,
             "certainty": request.threshold
         })
-        .with_limit(5)
+        .with_additional(["certainty"])
+        .with_limit(100)
         .do()
     )
     
+    # print(f"Weaviate response: {response}")
+
     duplicates = []
     if "data" in response and "Get" in response["data"] and COLLECTION_NAME in response["data"]["Get"]:
         results = response["data"]["Get"][COLLECTION_NAME]
         for res in results:
             if res["report_id"] != request.report_id:
+                # Add certainty to the result
+                if "_additional" in res:
+                    res["score"] = res["_additional"]["certainty"]
                 duplicates.append(res)
-                
+    
+    # print(f"Found {len(duplicates)} duplicates")
     return {"duplicates": duplicates}
 
 class DraftMessageRequest(BaseModel):
@@ -225,7 +235,8 @@ def draft_message(request: DraftMessageRequest):
             )
             message = response.text.strip()
         except Exception as e:
-            print(f"Gemini drafting failed: {e}")
+            # print(f"Gemini drafting failed: {e}")
+            pass
 
     # Fallback if generation fails or no key
     if not message or len(message) < 20:

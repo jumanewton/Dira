@@ -35,14 +35,14 @@ def send_email(to: str, subject: str, body: str):
         return {"status": "sent", "method": "email"}
     except Exception as e:
         # For demo, if SMTP fails, just log
-        print(f"Email send failed: {e}")
-        print(f"Would send email to {to}: {subject} - {body}")
+        # print(f"Email send failed: {e}")
+        # print(f"Would send email to {to}: {subject} - {body}")
         return {"status": "logged", "method": "email"}
 
 @app.post("/send_sms")
 def send_sms(to: str, message: str):
     # Demo: use Twilio or similar, but for now log
-    print(f"Sending SMS to {to}: {message}")
+    # print(f"Sending SMS to {to}: {message}")
     return {"status": "sent", "method": "sms"}
 
 @app.post("/send_api")
@@ -51,7 +51,7 @@ def send_api(url: str, data: dict):
         response = requests.post(url, json=data)
         return {"status": "sent", "method": "api", "response": response.status_code}
     except Exception as e:
-        print(f"API send failed: {e}")
+        # print(f"API send failed: {e}")
         return {"status": "failed", "method": "api"}
 
 if __name__ == "__main__":

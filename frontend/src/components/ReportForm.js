@@ -26,7 +26,7 @@ function ReportForm() {
         }
       });
 
-      console.log("Submission response:", response);
+      // console.log("Submission response:", response);
       
       // Handle different response structures
       let reportId = "Unknown";

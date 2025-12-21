@@ -71,11 +71,9 @@ walker RouterAgent {
 
     can route with Report entry {
         if here.status == "duplicate" {
-            print("RouterAgent: Report is a duplicate. Skipping routing.");
             disengage;
         }
 
-        print("RouterAgent: routing report");
         
         # Select organisations based on category
         selected_orgs = [];
@@ -135,9 +133,7 @@ walker RouterAgent {
                     "body": message
                 });
                 if send_response.status_code == 200 {
-                    print("Notification sent to " + org.name + " via email");
                 } else {
-                    print("Failed to send notification to " + org.name);
                 }
             }
             
@@ -149,7 +145,6 @@ walker RouterAgent {
         }
         
         here.status = "routed";
-        print("Report routed to " + str(len(selected_orgs)) + " organisations");
     }
 }
 
@@ -160,30 +155,33 @@ walker DuplicateDetectorAgent {
     }
 
     can detect with Report entry {
-        print("DuplicateDetectorAgent: checking for duplicates");
         
         response = requests.post("http://localhost:8001/find_duplicates", json={
             "report_id": here.id,
             "title": here.title,
             "description": here.description,
-            "threshold": 0.8
+            "threshold": 0.6
         });
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
             
             if len(duplicates) > 0 {
                 here.status = "duplicate";
-                print("Duplicates found:", len(duplicates));
+                for dup in duplicates {
+                    if "score" in dup {
+                    }
+                }
             } else {
                 here.status = "unique";
-                print("No duplicates found");
             }
+        } else {
         }
         
-        print("Duplicates checked");
         
         # Spawn RouterAgent
-        spawn RouterAgent;
+        spawn RouterAgent();
+
+        report {"report_id": here.id, "status": here.status};
     }
 }
 
@@ -197,7 +195,6 @@ walker ClassifierAgent {
     }
 
     can classify with Report entry {
-        print("ClassifierAgent: classifying report");
         
         text = here.title + " " + here.description;
         
@@ -207,12 +204,14 @@ walker ClassifierAgent {
             data = response.json();
             here.category = data["category"];
             here.confidence = data["confidence"];
+        } else {
         }
         
         # Assess urgency
         response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             here.urgency = response.json();
+        } else {
         }
         
         # Store embedding
@@ -222,14 +221,13 @@ walker ClassifierAgent {
             "description": here.description
         });
         if response.status_code == 200 {
-            print("Embedding stored");
+        } else {
         }
         
         here.status = "classified";
-        print("Report classified");
         
         # Spawn DuplicateDetectorAgent
-        spawn DuplicateDetectorAgent;
+        spawn DuplicateDetectorAgent();
     }
 }
 
@@ -237,7 +235,6 @@ walker IntakeAgent {
     has report_data: dict;
 
     can validate_and_create with `root entry {
-        print("IntakeAgent: validating and creating report");
         
         # Extract entities
         text = self.report_data["title"] + " " + self.report_data["description"];
@@ -271,7 +268,6 @@ walker IntakeAgent {
     }
 
     can spawn_classifier with Report entry {
-        print("IntakeAgent: classifying report");
         text = here.title + " " + here.description;
         
         # Classify
@@ -280,12 +276,14 @@ walker IntakeAgent {
             data = response.json();
             here.category = data["category"];
             here.confidence = data["confidence"];
+        } else {
         }
         
         # Assess urgency
         response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             here.urgency = response.json();
+        } else {
         }
         
         # Store embedding
@@ -295,17 +293,39 @@ walker IntakeAgent {
             "description": here.description
         });
         if response.status_code == 200 {
-            print("Embedding stored");
+        } else {
         }
         
         here.status = "classified";
-        print("Report classified");
 
-        # Spawn DuplicateDetectorAgent
-        spawn DuplicateDetectorAgent;
+        # Duplicate Detection Logic (Moved from DuplicateDetectorAgent)
         
-        print("Report created with ID:", here.id);
-        report {"report_id": here.id, "status": "submitted"};
+        response = requests.post("http://localhost:8001/find_duplicates", json={
+            "report_id": here.id,
+            "title": here.title,
+            "description": here.description,
+            "threshold": 0.6
+        });
+        if response.status_code == 200 {
+            duplicates = response.json()["duplicates"];
+            
+            if len(duplicates) > 0 {
+                here.status = "duplicate";
+                for dup in duplicates {
+                    if "score" in dup {
+                    }
+                }
+            } else {
+                here.status = "unique";
+                
+                # Spawn RouterAgent if unique
+                spawn RouterAgent();
+            }
+        } else {
+        }
+        
+        
+        report {"report_id": here.id, "status": here.status};
     }
 }
 
@@ -397,6 +417,96 @@ walker get_org_reports {
     }
 }
 
+walker CleanupDuplicates {
+    has reports: list = [];
+
+    can start_traversal with `root entry {
+        visit [-->];
+    }
+
+    can collect with Report entry {
+        self.reports.append(here);
+    }
+
+    can process with exit {
+        
+        # Sort by date - simple bubble sort since :python: block might be tricky here
+        # or just rely on insertion order if we can't sort easily in pure Jac
+        # Actually, let's try to use a simple sort loop
+        
+        n = len(self.reports);
+        for i in range(n) {
+            for j in range(0, n-i-1) {
+                if self.reports[j].submitted_at > self.reports[j+1].submitted_at {
+                    temp = self.reports[j];
+                    self.reports[j] = self.reports[j+1];
+                    self.reports[j+1] = temp;
+                }
+            }
+        }
+
+        report_map = {};
+        for r in self.reports {
+            report_map[r.id] = r;
+        }
+
+        processed_ids = [];
+
+        for r in self.reports {
+            if r.id in processed_ids {
+                continue;
+            }
+
+            # Assume this is unique for now (if not already marked duplicate by previous iteration)
+            # But we should respect existing "duplicate" status if we trust it?
+            # No, we are re-evaluating everything.
+            # However, if we mark it unique here, we might overwrite a correct "duplicate" status if our logic is flawed.
+            # But the user asked to clean old data which is INCORRECTLY unique.
+            
+            # So we treat 'r' as the "original" because it's the oldest unseen one.
+            if r.status == "duplicate" {
+                # If it was already duplicate, we might want to keep it that way, 
+                # OR we might want to re-check if it's actually unique (maybe the original was deleted?).
+                # For safety, let's assume if it's duplicate, it's duplicate.
+                processed_ids.append(r.id);
+                continue;
+            }
+
+            # It is currently unique or submitted.
+            processed_ids.append(r.id);
+
+            try {
+                response = requests.post("http://localhost:8001/find_duplicates", json={
+                    "report_id": r.id,
+                    "title": r.title,
+                    "description": r.description,
+                    "threshold": 0.6
+                });
+                
+                if response.status_code == 200 {
+                    duplicates = response.json()["duplicates"];
+                    for dup in duplicates {
+                        dup_id = dup["report_id"];
+                        if dup_id in report_map {
+                            dup_node = report_map[dup_id];
+                            
+                            # If the found duplicate is NOT in processed_ids, it means it is NEWER than 'r' (since we sorted).
+                            # So 'r' is the original, and 'dup_node' is the duplicate.
+                            if dup_node.id not in processed_ids {
+                                dup_node.status = "duplicate";
+                                processed_ids.append(dup_node.id);
+                            }
+                        }
+                    }
+                }
+            } except Exception as e {
+            }
+        }
+        
+        report {"status": "complete", "processed": len(self.reports)};
+    }
+}
+
 walker get_analytics {
     has metrics: dict = {};
     has temp_monthly_data: dict = {};
@@ -475,7 +585,6 @@ walker get_analytics {
                     self.temp_monthly_data[month]["resolved"] += 1;
                 }
             } except Exception as e {
-                print(f"Error parsing date for analytics: {e}");
             }
         }
     }
@@ -556,6 +665,4 @@ with entry {
 
     root ++> routing_policy;
 
-    print("Dira OSP graph initialized");
-    print("Organisations:", gov_org.name, utility_org.name);
 }
