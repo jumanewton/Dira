@@ -26,10 +26,8 @@ CACHE_DIR = os.getenv("HUGGINGFACE_CACHE_DIR", "./models_cache")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
-    # The 'genai.Client' syntax indicates you are using the new 'google-genai' SDK
     gemini_client = genai.Client(api_key=GEMINI_API_KEY)
     
-    # Updated to the current stable model (Dec 2025)
     GEMINI_MODEL_NAME = 'gemini-2.5-flash' 
 
 else:
