@@ -160,7 +160,7 @@ walker DuplicateDetectorAgent {
             "report_id": here.id,
             "title": here.title,
             "description": here.description,
-            "threshold": 0.6
+            "threshold": 0.85
         });
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
@@ -306,7 +306,7 @@ walker IntakeAgent {
             "report_id": here.id,
             "title": here.title,
             "description": here.description,
-            "threshold": 0.6
+            "threshold": 0.85
         });
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
@@ -482,7 +482,7 @@ walker CleanupDuplicates {
                     "report_id": r.id,
                     "title": r.title,
                     "description": r.description,
-                    "threshold": 0.6
+                    "threshold": 0.85
                 });
                 
                 if response.status_code == 200 {
