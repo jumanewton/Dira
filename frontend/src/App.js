@@ -11,8 +11,14 @@ import Analytics from './components/Analytics';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [theme, setTheme] = React.useState('light');
 
   useEffect(() => {
+    // Load theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
     // Auto-login as admin for demo purposes to share the graph
     const login = async () => {
       try {
@@ -61,6 +67,13 @@ function App() {
     login();
   }, []);
 
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
   if (!isLoggedIn) {
       return <div className="loading">Initializing Dira...</div>;
   }
@@ -77,6 +90,11 @@ function App() {
             <li><Link to="/transparency">Public View</Link></li>
             <li><Link to="/dashboard">Org Dashboard</Link></li>
             <li><Link to="/analytics">Analytics</Link></li>
+            <li>
+              <button onClick={toggleTheme} className="theme-toggle" title="Toggle Dark Mode">
+                {theme === 'light' ? '🌙' : '☀️'}
+              </button>
+            </li>
           </ul>
         </nav>
 
