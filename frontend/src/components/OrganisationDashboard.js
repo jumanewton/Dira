@@ -102,7 +102,7 @@ function OrganisationDashboard() {
         </div>
       </div>
 
-      <div className="reports-list">
+      <div className="reports-grid">
         {filteredReports.length === 0 ? (
           <p className="no-reports">No reports found for the selected criteria.</p>
         ) : (
