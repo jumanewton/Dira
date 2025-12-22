@@ -5,6 +5,7 @@ import datetime;
 import requests;
 import json;
 import email_tool;
+import report_utils;
 
 # Node definitions
 node Organisation {
@@ -444,6 +445,8 @@ walker IntakeAgent {
 }
 
 walker get_public_reports {
+    has limit: int = 25;
+    has offset: int = 0;
     has reports_list: list = [];
 
     can start_traversal with `root entry {
@@ -465,7 +468,7 @@ walker get_public_reports {
     }
 
     can return_reports with exit {
-        report self.reports_list;
+        report report_utils.sort_and_slice_reports(self.reports_list, self.limit, self.offset);
     }
 }
 
@@ -501,6 +504,8 @@ walker get_report_status {
 
 walker get_org_reports {
     has org_name: str;
+    has limit: int = 25;
+    has offset: int = 0;
     has reports_list: list = [];
 
     can start_traversal with `root entry {
@@ -527,7 +532,7 @@ walker get_org_reports {
     }
 
     can return_reports with exit {
-        report self.reports_list;
+        report report_utils.sort_and_slice_reports(self.reports_list, self.limit, self.offset);
     }
 }
 

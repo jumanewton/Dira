@@ -16,7 +16,7 @@ function PublicTransparency() {
   const fetchPublicReports = async () => {
     try {
       setLoading(true);
-      const response = await runWalker('get_public_reports', {});
+      const response = await runWalker('get_public_reports', { limit: 25 });
       
       let reportsList = [];
       if (response.reports && Array.isArray(response.reports)) {
@@ -45,10 +45,6 @@ function PublicTransparency() {
             }
           ];
       }
-
-      // Sort by date (newest first) and limit to max 25 reports
-      reportsList.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
-      reportsList = reportsList.slice(0, 25);
 
       setReports(reportsList);
     } catch (error) {
