@@ -327,6 +327,7 @@ html, body {
 .stat-card p {
   margin: 0;
   opacity: 0.9;
+  color: white;
 }
 
 .search-box {
