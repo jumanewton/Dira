@@ -411,17 +411,19 @@ walker IntakeAgent {
                         all_nodes = [root_node-->];
                     }
 
+                    sent_emails = [];
                     for node in all_nodes {
                         # Filter for Organisation nodes by checking type name string
                         # This avoids AttributeError on other node types
                         if "Organisation" in str(type(node)) {
-                            if node.contact_email {
+                            if node.contact_email and node.contact_email not in sent_emails {
                                  try {
                                     email_tool.send_email_tool(
                                         to=node.contact_email,
                                         subject="Public Report: " + here.title,
                                         body="Report: " + here.title + "\n\n" + here.description
                                     );
+                                    sent_emails.append(node.contact_email);
                                  } except Exception as e {
                                     print("IntakeAgent: Email error: " + str(e));
                                  }
