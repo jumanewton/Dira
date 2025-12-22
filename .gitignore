@@ -66,3 +66,4 @@ models_cache/
 *.lock
 *.safetensors
 docs/todo.md
+docs/missing_requirements.md

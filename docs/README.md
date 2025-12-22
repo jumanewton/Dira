@@ -4,20 +4,21 @@
 Dira is a feedback and issue-tracking platform for government organisations and public utilities. It uses Jaseci's Jac language with OSP graphs and byLLM agents to process, classify, and route public reports efficiently.
 
 ## Features
-- Anonymous or named report submissions
-- NLP pipeline for entity extraction, classification, and urgency assessment
-- Semantic duplicate detection via vector database
-- OSP graph for modeling organizations, reports, and workflows
-- byLLM agents for summarization, routing, and auto-drafting
-- Dashboard for organizations and public transparency view
+- **Multi-Agent System**: Intake, Classifier, Duplicate Detector, and Router agents working in concert.
+- **Native byLLM Integration**: Uses Jac's `by llm` capability for classification, urgency assessment, and message drafting.
+- **OSP Graph**: Models organizations, reports, and facilities spatially for intelligent routing.
+- **Semantic Duplicate Detection**: Uses vector embeddings to identify and group similar reports.
+- **Jac Client Frontend**: React application integrated with `jac-client` for seamless backend communication.
+- **Transparency**: Public dashboards and organization-specific views.
 
 ## Architecture
-- **Backend**: Jac (core) with OSP graphs and byLLM agents
-- **Frontend**: React with Jac Client for walker calls
-- **NLP Service**: Python microservice for entity extraction and classification
-- **Vector DB**: Weaviate for semantic search and duplicate detection
-- **Storage**: MongoDB for metadata
-- **Integrations**: SMTP/API/SMS for routing
+- **Backend**: Jac (core) with OSP graphs and native `byLLM` agents.
+- **Frontend**: React using `jac-client` library.
+- **NLP Service**: Python microservice for entity extraction and vector embeddings.
+- **Vector DB**: Weaviate for semantic search.
+- **Integrations**: SMTP/API/SMS for routing.
+
+See [Architecture Diagram](architecture.md) for agent interaction details.
 
 ## Setup Instructions
 
@@ -38,95 +39,69 @@ cp .env .env.local  # Optional: for local overrides
 - `WEAVIATE_URL`: Vector database connection
 - `HUGGINGFACE_CACHE_DIR`: Directory for ML model caching
 
-**Optional Variables:**
-- `NLP_PORT`, `NOTIFICATION_PORT`: Service ports (defaults: 8001, 8003)
-- `SMTP_SERVER`, `SMTP_PORT`: Email server settings
+### 2. Install Dependencies
 
-Edit `.env` with your configuration before running services.
-
-### 2. Install Jaseci
+**Backend (Jac & Python):**
 ```bash
 pip install jaseci
-```
-
-### 3. Install Python Dependencies
-```bash
 cd backend/python
 pip install -r requirements.txt
 ```
 
-### 4. Install Frontend Dependencies
+**Frontend:**
 ```bash
 cd frontend
 npm install
 ```
 
-### 5. Set up Vector Database
-- Install Weaviate locally or use cloud instance
-- Configure connection in `.env` (WEAVIATE_URL)
-
-### 6. Download ML Models
-The first run will automatically download models from Hugging Face:
-- **Gemini 3 Pro (Preview)**: Used for text classification, urgency assessment, and message drafting (requires API key).
-- **SentenceTransformers** (`sentence-transformers/all-MiniLM-L6-v2`): Generates embeddings for semantic search (cached locally).
-
-Models are cached in `HUGGINGFACE_CACHE_DIR` (default: `./models_cache`).
-
-**Note**: First run may take time to download the embedding model. Subsequent runs will use cached models.
-
-### 7. Run Services
+### 3. Run Services
 Start services in separate terminals:
 
-**Weaviate Vector DB** (port 8080):
+**1. Weaviate Vector DB** (port 8080):
 ```bash
 docker compose -f docker/docker-compose.yml up -d weaviate
 ```
 
-**NLP Service** (port 8001):
+**2. NLP Service** (port 8001):
 ```bash
 cd backend/python
-# Ensure GEMINI_API_KEY is set in .env
 python nlp_service.py
 ```
 
-**Notification Service** (port 8003):
+**3. Notification Service** (port 8003):
 ```bash
 cd backend/python
 python notification_service.py
 ```
 
-**Jaseci Backend** (port 8002):
+**4. Jaseci Backend** (port 8002):
 ```bash
 cd backend/jac
-chmod +x serve.sh
-./serve.sh
+jac serve main.jac --port 8002
 ```
 
-
-
-**Frontend** (port 3000):
+**5. Frontend** (port 3000):
 ```bash
 cd frontend
 npm start
 ```
 
-## Features include:
-- Report submission form with anonymous option
-- Organization dashboard for managing assigned reports
-- Public transparency view of resolved issues
-- Analytics dashboard with metrics and charts
-- Privacy controls with automatic data redaction
-
-
-## Project Structure
+### 4. Load Seed Data
+To populate the system with realistic demo data:
+```bash
+python load_seed_data.py
 ```
-dira/
-├── backend/
-│   ├── jac/          # Jac source files
-│   └── python/       # Python microservices
-├── frontend/         # React app
-├── vector_db/        # Vector DB config
-├── docker/           # Docker files
-├── docs/             # Documentation
-└── tests/            # Test files
-```
+
+## Documentation
+- [Agent Interaction Diagram](architecture.md)
+- [Evaluation Plan](evaluation_plan.md)
+- [Missing Requirements Analysis](missing_requirements.md)
+
+## Evaluation
+The project includes an evaluation plan covering:
+- Classification Accuracy
+- Duplicate Detection Precision
+- Routing Latency
+- Qualitative Message Quality
+
+See [Evaluation Plan](evaluation_plan.md) for details.
