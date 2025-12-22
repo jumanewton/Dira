@@ -46,6 +46,10 @@ function PublicTransparency() {
           ];
       }
 
+      // Sort by date (newest first) and limit to max 25 reports
+      reportsList.sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at));
+      reportsList = reportsList.slice(0, 25);
+
       setReports(reportsList);
     } catch (error) {
       console.error('Error fetching reports:', error);
