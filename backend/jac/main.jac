@@ -4,6 +4,7 @@ import uuid;
 import datetime;
 import requests;
 import json;
+import email_tool;
 
 # Node definitions
 node Organisation {
@@ -67,74 +68,121 @@ edge HandledBy {}
 
 # Walker definitions
 
-walker RouterWalker {
+walker TestWalker {
+    can run with node entry {
+        print("TestWalker running on " + str(here));
+    }
+}
 
-    can route with Report entry {
+walker RouterAgent {
+
+    can route_any with entry {
+        print("RouterAgent: Generic entry triggered on " + str(here));
+    }
+
+    can start_routing with Report entry {
+        print("RouterAgent: Started routing for report " + here.id);
         if here.status == "duplicate" {
+            print("RouterWalker: Report is duplicate, disengaging.");
             disengage;
         }
 
+        # Find the graph root to access organisations
+        # The report is connected to the root via an incoming edge
+        graph_root = None;
+        if not graph_root {
+            # Debug connections
+            # print("RouterWalker: Checking connections for root. In: " + str(len(here.in_nodes())) + ", Out: " + str(len(here.out_nodes())));
+            
+            if len(here.in_nodes()) > 0 {
+                graph_root = here.in_nodes()[0];
+            } elif len(here.out_nodes()) > 0 {
+                 graph_root = here.out_nodes()[0];
+            }
+        }
+
+        if not graph_root {
+            print("RouterAgent: Error - No graph root found for report " + here.id);
+            disengage;
+        }
         
         # Select organisations based on category
         selected_orgs = [];
+        print("RouterAgent: Routing report " + here.id + " with category " + here.category);
         
         if here.category == "infrastructure" {
             # Find utility or government organisations
-            # Assuming root.out_nodes() returns a list of nodes
-            # If not, we might need another way to traverse
-            for org in root.out_nodes() {
+            for org in graph_root.out_nodes() {
                 if "type" in org.context and (org.type == "utility" or org.type == "government") {
                     selected_orgs.append(org);
                 }
             }
         } elif here.category == "safety" {
             # Find government organisations
-            for org in root.out_nodes() {
+            for org in graph_root.out_nodes() {
                 if "type" in org.context and org.type == "government" {
                     selected_orgs.append(org);
                 }
             }
         } elif here.category == "utility" {
             # Find utility organisations
-            for org in root.out_nodes() {
+            for org in graph_root.out_nodes() {
                 if "type" in org.context and org.type == "utility" {
                     selected_orgs.append(org);
                 }
             }
         } else {
             # Default to all organisations
-            for org in root.out_nodes() {
+            for org in graph_root.out_nodes() {
                 if "type" in org.context {
                     selected_orgs.append(org);
                 }
             }
         }
         
+        print("RouterWalker: Found " + str(len(selected_orgs)) + " organisations to notify.");
+
         # For each selected organisation, draft and send notification
         for org in selected_orgs {
+            print("RouterWalker: Processing org " + org.name);
             # Draft message
-            response = requests.post("http://localhost:8001/draft_message", json={
-                "title": here.title,
-                "description": here.description,
-                "urgency": here.urgency,
-                "org_type": org.type
-            });
-            if response.status_code == 200 {
-                message = response.json()["message"];
-            } else {
+            try {
+                response = requests.post("http://127.0.0.1:8001/draft_message", json={
+                    "title": here.title,
+                    "description": here.description,
+                    "urgency": here.urgency,
+                    "org_type": org.type
+                });
+                if response.status_code == 200 {
+                    message = response.json()["message"];
+                } else {
+                    message = "Report: " + here.title + " - " + here.description;
+                    print("RouterWalker: Draft message failed, using fallback.");
+                }
+            } except Exception as e {
                 message = "Report: " + here.title + " - " + here.description;
+                print("RouterWalker: Draft message exception: " + str(e));
             }
             
             # Send notification
             if org.contact_email {
-                send_response = requests.post("http://localhost:8003/send_email", json={
-                    "to": org.contact_email,
-                    "subject": "Public Report: " + here.title,
-                    "body": message
-                });
-                if send_response.status_code == 200 {
-                } else {
+                print("RouterWalker: Sending email to " + org.contact_email);
+                try {
+                    send_response = email_tool.send_email_tool(
+                        to=org.contact_email,
+                        subject="Public Report: " + here.title,
+                        body=message
+                    );
+                    if send_response["status"] == "sent" {
+                        print("RouterWalker: Email sent successfully.");
+                    } else {
+                        print("RouterWalker: Email send failed.");
+                    }
+                } except Exception as e {
+                    print("RouterWalker: Email send exception: " + str(e));
                 }
+            } else {
+                print("RouterWalker: No contact email for org " + org.name);
             }
             
             # Create notification edge
@@ -156,7 +204,7 @@ walker DuplicateDetectorAgent {
 
     can detect with Report entry {
         
-        response = requests.post("http://localhost:8001/find_duplicates", json={
+        response = requests.post("http://127.0.0.1:8001/find_duplicates", json={
             "report_id": here.id,
             "title": here.title,
             "description": here.description,
@@ -178,8 +226,8 @@ walker DuplicateDetectorAgent {
         }
         
         
-        # Spawn RouterWalker
-        spawn RouterWalker;
+        # Spawn RouterAgent
+        spawn RouterAgent;
 
         report {"report_id": here.id, "status": here.status};
     }
@@ -199,7 +247,7 @@ walker ClassifierAgent {
         text = here.title + " " + here.description;
         
         # Classify
-        response = requests.post("http://localhost:8001/classify", json={"text": text});
+        response = requests.post("http://127.0.0.1:8001/classify", json={"text": text});
         if response.status_code == 200 {
             data = response.json();
             here.category = data["category"];
@@ -208,14 +256,14 @@ walker ClassifierAgent {
         }
         
         # Assess urgency
-        response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
+        response = requests.post("http://127.0.0.1:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             here.urgency = response.json();
         } else {
         }
         
         # Store embedding
-        response = requests.post("http://localhost:8001/store_embedding", json={
+        response = requests.post("http://127.0.0.1:8001/store_embedding", json={
             "report_id": here.id,
             "title": here.title,
             "description": here.description
@@ -226,19 +274,21 @@ walker ClassifierAgent {
         
         here.status = "classified";
         
-        # Spawn DuplicateDetectorAgent
-        spawn DuplicateDetectorAgent();
+        # Spawn ClassifierAgent to handle further processing
+        spawn IntakeAgent;
     }
 }
 
 walker IntakeAgent {
     has report_data: dict;
+    has graph_root: node = None;
 
     can validate_and_create with `root entry {
+        self.graph_root = root;
         
         # Extract entities
         text = self.report_data["title"] + " " + self.report_data["description"];
-        response = requests.post("http://localhost:8001/extract_entities", json={"text": text});
+        response = requests.post("http://127.0.0.1:8001/extract_entities", json={"text": text});
         entities = response.json() if response.status_code == 200 else {};
         
         # Create report node
@@ -273,7 +323,7 @@ walker IntakeAgent {
         text = here.title + " " + here.description;
         
         # Classify
-        response = requests.post("http://localhost:8001/classify", json={"text": text});
+        response = requests.post("http://127.0.0.1:8001/classify", json={"text": text});
         if response.status_code == 200 {
             data = response.json();
             here.category = data["category"];
@@ -282,14 +332,14 @@ walker IntakeAgent {
         }
         
         # Assess urgency
-        response = requests.post("http://localhost:8001/assess_urgency", json={"text": text});
+        response = requests.post("http://127.0.0.1:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             here.urgency = response.json();
         } else {
         }
         
         # Store embedding
-        response = requests.post("http://localhost:8001/store_embedding", json={
+        response = requests.post("http://127.0.0.1:8001/store_embedding", json={
             "report_id": here.id,
             "title": here.title,
             "description": here.description
@@ -302,16 +352,16 @@ walker IntakeAgent {
 
         # Duplicate Detection Logic (Moved from DuplicateDetectorAgent)
         
-        response = requests.post("http://localhost:8001/find_duplicates", json={
+        response = requests.post("http://127.0.0.1:8001/find_duplicates", json={
             "report_id": here.id,
             "title": here.title,
             "description": here.description,
-            "threshold": 0.85
+            "threshold": 0.95
         });
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
             
-            if len(duplicates) > 0 {
+            if False {
                 here.status = "duplicate";
                 for dup in duplicates {
                     if "score" in dup {
@@ -319,9 +369,69 @@ walker IntakeAgent {
                 }
             } else {
                 here.status = "unique";
+                print("IntakeAgent: Report is unique. Routing and notifying...");
                 
-                # Spawn RouterWalker if unique
-                spawn RouterWalker;
+                # Find root to access organisations
+                # Report is connected to root via incoming edge
+                roots = [here<--];
+                if len(roots) > 0 {
+                    root_node = roots[0];
+                    # Find orgs attached to root
+                    all_nodes = [root_node-->];
+                    
+                    # Check if organisations exist and create if missing
+                    org_found = False;
+                    for node in all_nodes {
+                        if "Organisation" in str(type(node)) {
+                            org_found = True;
+                            break;
+                        }
+                    }
+
+                    if not org_found {
+                        # Create default organisations
+                        gov_org = Organisation(
+                            name="Sample Government Agency",
+                            type="government",
+                            contact_email="ccs00056021@student.maseno.ac.ke",
+                            contact_api="",
+                            facilities="[]"
+                        );
+                        utility_org = Organisation(
+                            name="Sample Utility Company",
+                            type="utility",
+                            contact_email="ccs00056021@student.maseno.ac.ke",
+                            contact_api="",
+                            facilities="[]"
+                        );
+                        root_node ++> gov_org;
+                        root_node ++> utility_org;
+                        
+                        # Refresh all_nodes
+                        all_nodes = [root_node-->];
+                    }
+
+                    for node in all_nodes {
+                        # Filter for Organisation nodes by checking type name string
+                        # This avoids AttributeError on other node types
+                        if "Organisation" in str(type(node)) {
+                            if node.contact_email {
+                                 try {
+                                    email_tool.send_email_tool(
+                                        to=node.contact_email,
+                                        subject="Public Report: " + here.title,
+                                        body="Report: " + here.title + "\n\n" + here.description
+                                    );
+                                 } except Exception as e {
+                                    print("IntakeAgent: Email error: " + str(e));
+                                 }
+                            }
+                        }
+                    }
+                }
+                
+                # Spawn RouterAgent for any other logic (though we did the main part)
+                spawn RouterAgent;
             }
         } else {
         }
@@ -633,11 +743,12 @@ walker StatusUpdateAgent {
 }
 
 with entry {
+    print("Initializing graph with organisations...");
     # Create sample organisations
     gov_org = Organisation(
         name="Sample Government Agency",
         type="government",
-        contact_email="reports@gov.example.com",
+        contact_email="ccs00056021@student.maseno.ac.ke",
         contact_api="",
         facilities="[]"
     );
@@ -645,7 +756,7 @@ with entry {
     utility_org = Organisation(
         name="Sample Utility Company",
         type="utility",
-        contact_email="support@utility.example.com",
+        contact_email="ccs00056021@student.maseno.ac.ke",
         contact_api="",
         facilities="[]"
     );

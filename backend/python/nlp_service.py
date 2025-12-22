@@ -19,6 +19,11 @@ from vector_db.config import WEAVIATE_URL, COLLECTION_NAME
 # Load environment variables
 load_dotenv()
 
+# Logging setup
+import logging
+logging.basicConfig(filename='nlp_service.log', level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 app = FastAPI()
 
 # Configuration from environment
@@ -183,9 +188,9 @@ class FindDuplicatesRequest(BaseModel):
 
 @app.post("/find_duplicates")
 def find_duplicates(request: FindDuplicatesRequest):
-    # print(f"Finding duplicates for report {request.report_id} with threshold {request.threshold}")
+    logging.info(f"Finding duplicates for report {request.report_id}")
     if not client:
-        # print("Weaviate client not available")
+        logging.warning("Weaviate client not available")
         return {"duplicates": []}
         
     text = request.title + " " + request.description
@@ -203,8 +208,6 @@ def find_duplicates(request: FindDuplicatesRequest):
         .do()
     )
     
-    # print(f"Weaviate response: {response}")
-
     duplicates = []
     if "data" in response and "Get" in response["data"] and COLLECTION_NAME in response["data"]["Get"]:
         results = response["data"]["Get"][COLLECTION_NAME]
@@ -214,8 +217,9 @@ def find_duplicates(request: FindDuplicatesRequest):
                 if "_additional" in res:
                     res["score"] = res["_additional"]["certainty"]
                 duplicates.append(res)
+                logging.info(f"Found duplicate: {res['report_id']} with score {res.get('score')}")
     
-    # print(f"Found {len(duplicates)} duplicates")
+    logging.info(f"Found {len(duplicates)} duplicates")
     return {"duplicates": duplicates}
 
 class DraftMessageRequest(BaseModel):

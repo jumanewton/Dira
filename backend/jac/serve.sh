@@ -10,6 +10,11 @@ set -euo pipefail
 # Ensure we are in the script's directory
 cd "$(dirname "$0")"
 
+# Activate virtual environment if it exists
+if [ -f ~/.venvs/publiclens/bin/activate ]; then
+    source ~/.venvs/publiclens/bin/activate
+fi
+
 PORT=${1:-8002}
 
 echo "[jac] Running 'jac check' to show diagnostics (if any)..."
@@ -19,4 +24,4 @@ echo "[jac] Building main.jac into .jir/.bytecode..."
 jac build main.jac
 
 echo "[jac] Starting server on port ${PORT}..."
-jac serve main.jac --port ${PORT}
+PYTHONUNBUFFERED=1 jac serve main.jac --port ${PORT}

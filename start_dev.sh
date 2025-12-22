@@ -2,18 +2,18 @@
 
 # Start NLP Service
 echo "Starting NLP Service on port 8001..."
-python backend/python/nlp_service.py &
+python3 backend/python/nlp_service.py &
 NLP_PID=$!
 
 # Start Notification Service
 echo "Starting Notification Service on port 8003..."
-python backend/python/notification_service.py &
+python3 backend/python/notification_service.py &
 NOTIF_PID=$!
 
 # Start Jac Backend
 echo "Starting Jac Backend on port 8002..."
 cd backend/jac
-./serve.sh 8002 &
+./serve.sh 8002 > ../../jac_service.log 2>&1 &
 JAC_PID=$!
 cd ../..
 
