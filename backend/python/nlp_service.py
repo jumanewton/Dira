@@ -328,6 +328,11 @@ def generate_insights(request: InsightsRequest):
     
     return {"insights": "AI Insights not available (No API Key)."}
 
+@app.get("/health")
+def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "service": "nlp_service"}
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("NLP_PORT", 8001))

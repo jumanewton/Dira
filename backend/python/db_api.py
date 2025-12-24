@@ -245,6 +245,17 @@ def get_duplicate_reports_endpoint(report_id: str, threshold: float = 0.9):
     duplicates = crud.get_duplicate_reports(report_id, threshold)
     return [d.__dict__ for d in duplicates]
 
+# ============ Delete Endpoints (for testing) ============
+
+@app.delete("/reports/{report_id}")
+def delete_report_endpoint(report_id: str):
+    """Delete a report and its related data"""
+    try:
+        crud.delete_report(report_id)
+        return {"status": "deleted", "report_id": report_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============ Health Check ============
 
 @app.get("/health")

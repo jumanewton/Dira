@@ -1,13 +1,15 @@
-# Combined Dockerfile for Heroku Backend
-# Using python 3.12 to ensure jaclang compatibility (requires typing.override)
+# Combined Dockerfile for Heroku Backend (JAC + NLP + Database API)
+# Using python 3.12 to ensure jaclang compatibility
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including PostgreSQL client
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
+    postgresql-client \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -25,7 +27,6 @@ RUN python -m spacy download en_core_web_sm
 
 # Copy application code
 COPY backend/ ./backend/
-COPY vector_db/ ./vector_db/
 
 # Copy startup script
 COPY backend/start_heroku.sh ./start_heroku.sh
@@ -33,6 +34,10 @@ RUN chmod +x ./start_heroku.sh
 
 # Create a user for security (Heroku runs as non-root)
 RUN useradd -m myuser
+
+# Change ownership of app directory
+RUN chown -R myuser:myuser /app
+
 USER myuser
 
 # Run the startup script
