@@ -12,6 +12,10 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements
 COPY backend/python/requirements.txt ./requirements.txt
 
+# Upgrade pip and install CPU-only torch to save space/time
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir jaseci
