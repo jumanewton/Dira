@@ -1,6 +1,6 @@
 # Combined Dockerfile for Heroku Backend
-# Using python 3.10 to ensure spacy wheels are available and avoid compilation timeouts
-FROM python:3.10-slim
+# Using python 3.11 to ensure jaclang compatibility
+FROM python:3.11-slim
 
 WORKDIR /app
 
