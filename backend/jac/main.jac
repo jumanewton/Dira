@@ -300,27 +300,20 @@ walker IntakeAgent {
         if "image_data" in self.report_data {
             image_data = self.report_data["image_data"];
             if image_data {
-                print("IntakeAgent: Analyzing image...");
                 img_response = requests.post("http://127.0.0.1:8001/analyze_image", json={"image_data": image_data});
                 if img_response.status_code == 200 {
                     analysis_result = img_response.json()["analysis"];
-                    print("IntakeAgent: Image analysis complete.");
-                } else {
-                    print("IntakeAgent: Image analysis failed with status " + str(img_response.status_code));
                 }
             }
         }
 
-        print("IntakeAgent: Creating reporter node...");
         reporter_node = Reporter(
             id=str(uuid.uuid4()),
             name=self.report_data["name"],
             email=self.report_data["email"],
             is_anonymous=(self.report_data["name"] == "")
         );
-        print("IntakeAgent: Reporter node created.");
 
-        print("IntakeAgent: Creating report node...");
         # Create report node
         try {
             new_report = Report(
@@ -338,7 +331,6 @@ walker IntakeAgent {
                 image_data=image_data,
                 analysis_result=analysis_result
             );
-            print("IntakeAgent: Report node created with ID " + new_report.id);
         } except Exception as e {
             print("IntakeAgent: Error creating report node: " + str(e));
             disengage;
@@ -352,23 +344,18 @@ walker IntakeAgent {
 
         # --- Logic moved from spawn_classifier ---
         
-        print("IntakeAgent: Starting classification...");
         # Classify
         response = requests.post("http://127.0.0.1:8001/classify", json={"text": text});
         if response.status_code == 200 {
             data = response.json();
             new_report.category = data["category"];
             new_report.confidence = data["confidence"];
-            print("IntakeAgent: Classified as " + new_report.category);
-        } else {
-            print("IntakeAgent: Classification failed with status " + str(response.status_code));
         }
 
         # Assess urgency
         response = requests.post("http://127.0.0.1:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             new_report.urgency = response.json();
-            print("IntakeAgent: Urgency assessed as " + new_report.urgency);
         }
 
         # Store embedding
