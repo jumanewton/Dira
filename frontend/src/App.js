@@ -74,9 +74,9 @@ function App() {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  if (!isLoggedIn) {
-      return <div className="loading">Initializing Dira...</div>;
-  }
+  // if (!isLoggedIn) {
+  //     return <div className="loading">Initializing Dira...</div>;
+  // }
 
   return (
     <Router>

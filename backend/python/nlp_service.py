@@ -44,10 +44,24 @@ else:
     pass
 
 # Load models with cache directory
-nlp = spacy.load("en_core_web_sm")
+nlp_model = None
+def get_nlp():
+    global nlp_model
+    if nlp_model is None:
+        logging.info("Loading Spacy model...")
+        nlp_model = spacy.load("en_core_web_sm")
+    return nlp_model
+
 # classifier = pipeline("text-classification", model="microsoft/DialoGPT-medium", cache_dir=CACHE_DIR) # Replaced by Gemini
 # message_drafter = pipeline("text-generation", model="gpt2", cache_dir=CACHE_DIR) # Replaced by Gemini
-embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=CACHE_DIR) 
+
+embed_model = None
+def get_embedding_model():
+    global embed_model
+    if embed_model is None:
+        logging.info("Loading SentenceTransformer model...")
+        embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=CACHE_DIR)
+    return embed_model
 
 try:
     client = weaviate.Client(url=WEAVIATE_URL)
@@ -73,7 +87,7 @@ class TextRequest(BaseModel):
 
 @app.post("/extract_entities")
 def extract_entities(request: TextRequest):
-    doc = nlp(request.text)
+    doc = get_nlp()(request.text)
     entities = {
         "organisations": [ent.text for ent in doc.ents if ent.label_ == "ORG"],
         "locations": [ent.text for ent in doc.ents if ent.label_ == "GPE"],
@@ -99,7 +113,7 @@ def classify(request: ClassifyRequest):
                 model=GEMINI_MODEL_NAME,
                 contents=prompt
             )
-            # Simple parsing - in production use structured output or robust JSON parsing
+            # Simple parsing - in production I will use structured output or robust JSON parsing
             import re
             match = re.search(r'\{.*\}', response.text, re.DOTALL)
             if match:
@@ -162,7 +176,7 @@ class EmbeddingRequest(BaseModel):
 
 @app.post("/generate_embedding")
 def generate_embedding(request: EmbeddingRequest):
-    embedding = embedding_model.encode(request.text).tolist()
+    embedding = get_embedding_model().encode(request.text).tolist()
     return {"embedding": embedding}
 
 class StoreEmbeddingRequest(BaseModel):
@@ -176,7 +190,7 @@ def store_embedding(request: StoreEmbeddingRequest):
         return {"status": "skipped", "reason": "Weaviate not connected"}
         
     text = request.title + " " + request.description
-    embedding = embedding_model.encode(text).tolist()
+    embedding = get_embedding_model().encode(text).tolist()
     client.data_object.create({
         "report_id": request.report_id,
         "title": request.title,
@@ -198,7 +212,7 @@ def find_duplicates(request: FindDuplicatesRequest):
         return {"duplicates": []}
         
     text = request.title + " " + request.description
-    embedding = embedding_model.encode(text).tolist()
+    embedding = get_embedding_model().encode(text).tolist()
     
     response = (
         client.query

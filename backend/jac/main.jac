@@ -330,135 +330,110 @@ walker IntakeAgent {
         # Connect to root
         root ++> new_report;
 
-        report {
-            "report_id": new_report.id,
-            "analysis_result": new_report.analysis_result
-        };
-        
-        visit new_report;
-    }
-
-    can spawn_classifier with Report entry {
-        text = here.title + " " + here.description;
+        # --- Logic moved from spawn_classifier ---
         
         # Classify
         response = requests.post("http://127.0.0.1:8001/classify", json={"text": text});
         if response.status_code == 200 {
             data = response.json();
-            here.category = data["category"];
-            here.confidence = data["confidence"];
-        } else {
+            new_report.category = data["category"];
+            new_report.confidence = data["confidence"];
         }
-        
+
         # Assess urgency
         response = requests.post("http://127.0.0.1:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
-            here.urgency = response.json();
-        } else {
+            new_report.urgency = response.json();
         }
-        
+
         # Store embedding
         response = requests.post("http://127.0.0.1:8001/store_embedding", json={
-            "report_id": here.id,
-            "title": here.title,
-            "description": here.description
+            "report_id": new_report.id,
+            "title": new_report.title,
+            "description": new_report.description
         });
-        if response.status_code == 200 {
-        } else {
-        }
-        
-        here.status = "classified";
 
-        # Duplicate Detection Logic (Moved from DuplicateDetectorAgent)
-        
+        new_report.status = "classified";
+
+        # Duplicate Detection
         response = requests.post("http://127.0.0.1:8001/find_duplicates", json={
-            "report_id": here.id,
-            "title": here.title,
-            "description": here.description,
+            "report_id": new_report.id,
+            "title": new_report.title,
+            "description": new_report.description,
             "threshold": 0.85
         });
+        
         if response.status_code == 200 {
             duplicates = response.json()["duplicates"];
-            
             if len(duplicates) > 0 {
-                here.status = "duplicate";
-                for dup in duplicates {
-                    if "score" in dup {
-                    }
-                }
+                new_report.status = "duplicate";
             } else {
-                here.status = "unique";
+                new_report.status = "unique";
                 print("IntakeAgent: Report is unique. Routing and notifying...");
                 
-                # Find root to access organisations
-                # Report is connected to root via incoming edge
-                roots = [here<--];
-                if len(roots) > 0 {
-                    root_node = roots[0];
-                    # Find orgs attached to root
-                    all_nodes = [root_node-->];
+                # Routing and Notification Logic
+                root_node = root;
+                all_nodes = [root_node-->];
+                
+                # Check if organisations exist and create if missing
+                org_found = False;
+                for node in all_nodes {
+                    if "Organisation" in str(type(node)) {
+                        org_found = True;
+                        break;
+                    }
+                }
+
+                if not org_found {
+                    # Create default organisations
+                    gov_org = Organisation(
+                        name="Sample Government Agency",
+                        type="government",
+                        contact_email="ccs00056021@student.maseno.ac.ke",
+                        contact_api="",
+                        facilities="[]"
+                    );
+                    utility_org = Organisation(
+                        name="Sample Utility Company",
+                        type="utility",
+                        contact_email="ccs00056021@student.maseno.ac.ke",
+                        contact_api="",
+                        facilities="[]"
+                    );
+                    root_node ++> gov_org;
+                    root_node ++> utility_org;
                     
-                    # Check if organisations exist and create if missing
-                    org_found = False;
-                    for node in all_nodes {
-                        if "Organisation" in str(type(node)) {
-                            org_found = True;
-                            break;
-                        }
-                    }
+                    # Refresh all_nodes
+                    all_nodes = [root_node-->];
+                }
 
-                    if not org_found {
-                        # Create default organisations
-                        gov_org = Organisation(
-                            name="Sample Government Agency",
-                            type="government",
-                            contact_email="ccs00056021@student.maseno.ac.ke",
-                            contact_api="",
-                            facilities="[]"
-                        );
-                        utility_org = Organisation(
-                            name="Sample Utility Company",
-                            type="utility",
-                            contact_email="ccs00056021@student.maseno.ac.ke",
-                            contact_api="",
-                            facilities="[]"
-                        );
-                        root_node ++> gov_org;
-                        root_node ++> utility_org;
-                        
-                        # Refresh all_nodes
-                        all_nodes = [root_node-->];
-                    }
-
-                    sent_emails = [];
-                    for node in all_nodes {
-                        # Filter for Organisation nodes by checking type name string
-                        # This avoids AttributeError on other node types
-                        if "Organisation" in str(type(node)) {
-                            if node.contact_email and node.contact_email not in sent_emails {
-                                 try {
-                                    email_tool.send_email_tool(
-                                        to=node.contact_email,
-                                        subject="Public Report: " + here.title,
-                                        body="Report: " + here.title + "\n\n" + here.description
-                                    );
-                                    sent_emails.append(node.contact_email);
-                                 } except Exception as e {
-                                    print("IntakeAgent: Email error: " + str(e));
-                                 }
-                            }
+                sent_emails = [];
+                for node in all_nodes {
+                    if "Organisation" in str(type(node)) {
+                        if node.contact_email and node.contact_email not in sent_emails {
+                             try {
+                                email_tool.send_email_tool(
+                                    to=node.contact_email,
+                                    subject="Public Report: " + new_report.title,
+                                    body="Report: " + new_report.title + "\n\n" + new_report.description
+                                );
+                                sent_emails.append(node.contact_email);
+                             } except Exception as e {
+                                print("IntakeAgent: Email error: " + str(e));
+                             }
                         }
                     }
                 }
                 
-                # Spawn RouterAgent for any other logic (though we did the main part)
-                spawn RouterAgent;
+                spawn new_report walker RouterAgent;
             }
-        } else {
         }
-        
-        
-        report {"report_id": here.id, "status": here.status};
+
+        report {
+            "report_id": new_report.id,
+            "analysis_result": new_report.analysis_result,
+            "status": new_report.status
+        };
     }
 }
 
