@@ -67,3 +67,7 @@ models_cache/
 *.safetensors
 docs/todo.md
 docs/missing_requirements.md
+
+# Models
+models_cache/
+backend/python/models_cache/
