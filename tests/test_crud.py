@@ -7,7 +7,7 @@ import sys
 import os
 
 # Add python directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend', 'python'))
 
 from models import Organisation, Reporter, Report, ReportRoute, RelatedReport
 import crud
