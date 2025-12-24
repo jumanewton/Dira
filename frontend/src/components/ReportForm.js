@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { runWalker } from '../jacService';
+import ReactMarkdown from 'react-markdown';
 
 function ReportForm() {
   const [formData, setFormData] = useState({
@@ -197,7 +198,9 @@ function ReportForm() {
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
         }}>
           <h3 style={{marginTop: 0, color: '#0d47a1'}}>AI Analysis</h3>
-          <p style={{whiteSpace: 'pre-wrap', color: '#1565c0', fontSize: '1.1em', fontWeight: '500'}}>{analysis}</p>
+          <div style={{color: '#1565c0', fontSize: '1.1em', fontWeight: '500', lineHeight: '1.6'}}>
+            <ReactMarkdown>{analysis}</ReactMarkdown>
+          </div>
         </div>
       )}
     </div>
