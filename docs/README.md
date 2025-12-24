@@ -95,7 +95,6 @@ python load_seed_data.py
 ## Documentation
 - [Agent Interaction Diagram](architecture.md)
 - [Evaluation Plan](evaluation_plan.md)
-- [Missing Requirements Analysis](missing_requirements.md)
 
 ## Evaluation
 The project includes an evaluation plan covering:
