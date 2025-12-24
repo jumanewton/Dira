@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { runWalker } from '../jacService';
 
 function ReportForm() {
@@ -12,6 +12,7 @@ function ReportForm() {
   });
   const [status, setStatus] = useState('');
   const [analysis, setAnalysis] = useState('');
+  const fileInputRef = useRef(null);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -79,6 +80,9 @@ function ReportForm() {
         anonymous: true,
         image_data: ''
       });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       setStatus(`Error: ${error.message}`);
     }
@@ -127,6 +131,7 @@ function ReportForm() {
         <div className="form-group">
           <label htmlFor="image">Upload Image (Optional)</label>
           <input
+            ref={fileInputRef}
             type="file"
             id="image"
             accept="image/*"

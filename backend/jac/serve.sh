@@ -24,4 +24,5 @@ echo "[jac] Building main.jac into .jir/.bytecode..."
 jac build main.jac
 
 echo "[jac] Starting server on port ${PORT}..."
-PYTHONUNBUFFERED=1 jac serve main.jac --port ${PORT} | grep --line-buffered -vE "^\{|^\["
+export PYTHONUNBUFFERED=1
+jac serve main.jac --port "${PORT}" | grep --line-buffered -vE "^\{|^\[" || true
