@@ -183,9 +183,16 @@ function ReportForm() {
       )}
       
       {analysis && (
-        <div className="analysis-result" style={{marginTop: '20px', padding: '15px', backgroundColor: '#e8f5e9', borderRadius: '5px', borderLeft: '5px solid #4caf50'}}>
-          <h3 style={{marginTop: 0}}>AI Analysis</h3>
-          <p style={{whiteSpace: 'pre-wrap'}}>{analysis}</p>
+        <div className="analysis-result" style={{
+          marginTop: '20px', 
+          padding: '20px', 
+          backgroundColor: '#e3f2fd', // Light Blue
+          borderRadius: '8px', 
+          borderLeft: '6px solid #2196f3', // Blue
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{marginTop: 0, color: '#0d47a1'}}>AI Analysis</h3>
+          <p style={{whiteSpace: 'pre-wrap', color: '#1565c0', fontSize: '1.1em', fontWeight: '500'}}>{analysis}</p>
         </div>
       )}
     </div>
