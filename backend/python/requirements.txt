@@ -18,6 +18,4 @@ fastapi
 uvicorn
 requests
 Pillow
-
-byllm
 jaseci
