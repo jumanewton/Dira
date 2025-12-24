@@ -12,7 +12,7 @@ spacy==3.7.4
 sentence-transformers==2.2.2
 weaviate-client<4.0.0
 python-dotenv
-google-genai==1.0.0
+google-genai==0.2.2
 
 fastapi==0.95.2
 pydantic==1.10.13
