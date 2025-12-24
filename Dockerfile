@@ -19,13 +19,13 @@ RUN pip install --upgrade pip && \
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir jaseci
 
 # Download Spacy model
 RUN python -m spacy download en_core_web_sm
 
 # Copy application code
 COPY backend/ ./backend/
+COPY vector_db/ ./vector_db/
 
 # Copy startup script
 COPY backend/start_heroku.sh ./start_heroku.sh
