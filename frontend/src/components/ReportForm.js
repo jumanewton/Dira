@@ -49,6 +49,7 @@ function ReportForm() {
       // Handle different response structures
       let reportId = "Unknown";
       let analysisResult = "";
+      let reportStatus = "";
       
       // Helper to extract data from response
       const extractData = (res) => {
@@ -62,8 +63,9 @@ function ReportForm() {
       const data = extractData(response);
       if (data.report_id) reportId = data.report_id;
       if (data.analysis_result) analysisResult = data.analysis_result;
+      if (data.status) reportStatus = data.status;
 
-      setStatus(`Report submitted successfully! ID: ${reportId}`);
+      setStatus(`Report processed! ID: ${reportId} | Status: ${reportStatus}`);
       if (analysisResult) {
           setAnalysis(analysisResult);
       }

@@ -22,6 +22,13 @@ node Facility {
     has organisation: Organisation;
 }
 
+node Reporter {
+    has id: str;
+    has name: str;  # optional for anonymous
+    has email: str;
+    has is_anonymous: bool;
+}
+
 node Report {
     has id: str;
     has title: str;
@@ -32,15 +39,10 @@ node Report {
     has confidence: float;
     has status: str;  # submitted, routed, resolved
     has submitted_at: str;
-    has reporter: Reporter;
+    has reporter_id: str;
     has embedding: str;  # vector for duplicate detection as json string
-}
-
-node Reporter {
-    has id: str;
-    has name: str;  # optional for anonymous
-    has email: str;
-    has is_anonymous: bool;
+    has image_data: str; # base64 encoded image
+    has analysis_result: str; # AI analysis of the image
 }
 
 node Agent {
@@ -298,52 +300,75 @@ walker IntakeAgent {
         if "image_data" in self.report_data {
             image_data = self.report_data["image_data"];
             if image_data {
+                print("IntakeAgent: Analyzing image...");
                 img_response = requests.post("http://127.0.0.1:8001/analyze_image", json={"image_data": image_data});
                 if img_response.status_code == 200 {
                     analysis_result = img_response.json()["analysis"];
+                    print("IntakeAgent: Image analysis complete.");
+                } else {
+                    print("IntakeAgent: Image analysis failed with status " + str(img_response.status_code));
                 }
             }
         }
 
-        # Create report node
-        new_report = Report(
+        print("IntakeAgent: Creating reporter node...");
+        reporter_node = Reporter(
             id=str(uuid.uuid4()),
-            title=self.report_data["title"],
-            description=self.report_data["description"],
-            category="pending",
-            urgency="medium",
-            entities=json.dumps(entities),
-            confidence=0.5,
-            status="submitted",
-            submitted_at=str(datetime.datetime.now()),
-            reporter=Reporter(
-                id=str(uuid.uuid4()),
-                name=self.report_data["name"],
-                email=self.report_data["email"],
-                is_anonymous=(self.report_data["name"] == "")
-            ),
-            embedding="[]",
-            image_data=image_data,
-            analysis_result=analysis_result
+            name=self.report_data["name"],
+            email=self.report_data["email"],
+            is_anonymous=(self.report_data["name"] == "")
         );
+        print("IntakeAgent: Reporter node created.");
+
+        print("IntakeAgent: Creating report node...");
+        # Create report node
+        try {
+            new_report = Report(
+                id=str(uuid.uuid4()),
+                title=self.report_data["title"],
+                description=self.report_data["description"],
+                category="pending",
+                urgency="medium",
+                entities=json.dumps(entities),
+                confidence=0.5,
+                status="submitted",
+                submitted_at=str(datetime.datetime.now()),
+                reporter_id=reporter_node.id,
+                embedding="[]",
+                image_data=image_data,
+                analysis_result=analysis_result
+            );
+            print("IntakeAgent: Report node created with ID " + new_report.id);
+        } except Exception as e {
+            print("IntakeAgent: Error creating report node: " + str(e));
+            disengage;
+        }
         
         # Connect to root
         root ++> new_report;
+        
+        # Connect reporter to report
+        reporter_node ++> new_report;
 
         # --- Logic moved from spawn_classifier ---
         
+        print("IntakeAgent: Starting classification...");
         # Classify
         response = requests.post("http://127.0.0.1:8001/classify", json={"text": text});
         if response.status_code == 200 {
             data = response.json();
             new_report.category = data["category"];
             new_report.confidence = data["confidence"];
+            print("IntakeAgent: Classified as " + new_report.category);
+        } else {
+            print("IntakeAgent: Classification failed with status " + str(response.status_code));
         }
 
         # Assess urgency
         response = requests.post("http://127.0.0.1:8001/assess_urgency", json={"text": text});
         if response.status_code == 200 {
             new_report.urgency = response.json();
+            print("IntakeAgent: Urgency assessed as " + new_report.urgency);
         }
 
         # Store embedding
@@ -425,7 +450,7 @@ walker IntakeAgent {
                     }
                 }
                 
-                spawn new_report walker RouterAgent;
+                # spawn new_report walker RouterAgent; # Syntax error fix
             }
         }
 
@@ -434,6 +459,12 @@ walker IntakeAgent {
             "analysis_result": new_report.analysis_result,
             "status": new_report.status
         };
+        
+        visit new_report;
+    }
+
+    can start_router with Report entry {
+        spawn RouterAgent;
     }
 }
 

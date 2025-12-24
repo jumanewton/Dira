@@ -12,6 +12,13 @@ node Facility {
     has organisation: Organisation;
 }
 
+node Reporter {
+    has id: str;
+    has name: str;  # optional for anonymous
+    has email: str;
+    has is_anonymous: bool;
+}
+
 node Report {
     has id: str;
     has title: str;
@@ -22,17 +29,10 @@ node Report {
     has confidence: float;
     has status: str;  # submitted, routed, resolved
     has submitted_at: str;
-    has reporter: Reporter;
+    has reporter_id: str;
     has embedding: str;  # vector for duplicate detection as json string
     has image_data: str; # base64 encoded image
     has analysis_result: str; # AI analysis of the image
-}
-
-node Reporter {
-    has id: str;
-    has name: str;  # optional for anonymous
-    has email: str;
-    has is_anonymous: bool;
 }
 
 node Agent {
