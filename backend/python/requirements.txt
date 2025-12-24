@@ -9,14 +9,16 @@
 
 transformers==4.35.0
 spacy==3.7.4
-sentence-transformers
+sentence-transformers==2.2.2
 weaviate-client<4.0.0
 python-dotenv
-google-genai
+google-genai==1.0.0
 
-fastapi<0.100.0
-pydantic<2.0.0
-uvicorn
+fastapi==0.95.2
+pydantic==1.10.13
+uvicorn==0.22.0
 requests
 Pillow
+celery==5.3.1
+click==8.1.7
 jaseci==1.4.2.6
