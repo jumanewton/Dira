@@ -4,6 +4,4 @@ setup:
       as: DATABASE
 build:
   docker:
-    web:
-      dockerfile: docker/Dockerfile.heroku_frontend
-      context: .
+    web: Dockerfile.frontend
