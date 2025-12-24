@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { runWalker } from '../jacService';
+import ReactMarkdown from 'react-markdown';
 
 function Analytics() {
   const [metrics, setMetrics] = useState({});
   const [loading, setLoading] = useState(true);
+  const [aiInsights, setAiInsights] = useState('');
+  const [generatingInsights, setGeneratingInsights] = useState(false);
 
   useEffect(() => {
     fetchAnalytics();
@@ -55,6 +58,25 @@ function Analytics() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAIInsights = async () => {
+    try {
+      setGeneratingInsights(true);
+      const response = await runWalker('generate_ai_insights', { metrics: metrics });
+      
+      let insights = "No insights generated.";
+      if (response.insights) insights = response.insights;
+      else if (response.report && response.report[0] && response.report[0].insights) insights = response.report[0].insights;
+      else if (response.reports && response.reports[0] && response.reports[0].insights) insights = response.reports[0].insights;
+
+      setAiInsights(insights);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      setAiInsights("Failed to generate AI insights. Please try again.");
+    } finally {
+      setGeneratingInsights(false);
     }
   };
 
@@ -143,6 +165,27 @@ function Analytics() {
     ? ((metrics.resolvedReports / metrics.uniqueReports) * 100).toFixed(1) 
     : "0.0";
 
+  // Dynamic Insight Calculations
+  let mostCommonCategory = "N/A";
+  if (metrics.reportsByCategory && Object.keys(metrics.reportsByCategory).length > 0) {
+      mostCommonCategory = Object.entries(metrics.reportsByCategory)
+          .sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  let trendMessage = "Data insufficient for trend analysis.";
+  if (metrics.monthlyTrend && metrics.monthlyTrend.length >= 2) {
+      const current = metrics.monthlyTrend[metrics.monthlyTrend.length - 1].reports;
+      const previous = metrics.monthlyTrend[metrics.monthlyTrend.length - 2].reports;
+      if (previous > 0) {
+          const change = ((current - previous) / previous) * 100;
+          trendMessage = `Report submissions have ${change >= 0 ? 'increased' : 'decreased'} by ${Math.abs(change).toFixed(0)}% compared to last month.`;
+      } else {
+          trendMessage = "Report submissions are increasing from zero baseline.";
+      }
+  } else if (metrics.monthlyTrend && metrics.monthlyTrend.length === 1) {
+      trendMessage = "First month of data collection established.";
+  }
+
   return (
     <div className="analytics">
       <h1>Analytics Dashboard</h1>
@@ -183,23 +226,43 @@ function Analytics() {
       </div>
 
       <div className="insights-section">
-        <h3>Key Insights</h3>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
+            <h3>Key Insights</h3>
+            <button 
+                onClick={generateAIInsights} 
+                disabled={generatingInsights}
+                className="submit-btn"
+                style={{width: 'auto', padding: '8px 16px', margin: 0}}
+            >
+                {generatingInsights ? 'Generating...' : 'Generate AI Executive Summary'}
+            </button>
+        </div>
+
+        {aiInsights && (
+            <div className="insight-card" style={{marginBottom: '20px', borderLeft: '6px solid #9c27b0', backgroundColor: '#f3e5f5'}}>
+                <h4 style={{color: '#7b1fa2'}}>AI Executive Summary</h4>
+                <div style={{lineHeight: '1.6'}}>
+                    <ReactMarkdown>{aiInsights}</ReactMarkdown>
+                </div>
+            </div>
+        )}
+
         <div className="insights-grid">
           <div className="insight-card">
             <h4>Most Common Issues</h4>
-            <p>Infrastructure issues represent the largest category of reports, indicating areas where public services need improvement.</p>
+            <p><strong>{mostCommonCategory}</strong> issues represent the largest category of reports, indicating areas where public services need improvement.</p>
           </div>
           <div className="insight-card">
             <h4>Response Efficiency</h4>
-            <p>The average resolution time of {metrics.avgResolutionTime} days shows good responsiveness to public concerns.</p>
+            <p>The average resolution time of <strong>{metrics.avgResolutionTime} days</strong> shows {metrics.avgResolutionTime < 5 ? "excellent" : "standard"} responsiveness to public concerns.</p>
           </div>
           <div className="insight-card">
-            <h4>Trending Upward</h4>
-            <p>Report submissions have increased by 127% over the last 3 months, suggesting growing public engagement.</p>
+            <h4>Trending</h4>
+            <p>{trendMessage}</p>
           </div>
           <div className="insight-card">
-            <h4>High Resolution Rate</h4>
-            <p>With a {resolutionRate}% resolution rate, the system is effectively addressing reported issues.</p>
+            <h4>Resolution Rate</h4>
+            <p>With a <strong>{resolutionRate}%</strong> resolution rate, the system is {parseFloat(resolutionRate) > 50 ? "effectively" : "working on"} addressing reported issues.</p>
           </div>
         </div>
       </div>

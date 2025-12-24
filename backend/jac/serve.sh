@@ -10,7 +10,7 @@ set -euo pipefail
 # Ensure we are in the script's directory
 cd "$(dirname "$0")"
 
-# Activate virtual environment if it exists
+# Activate virtual environment 
 if [ -f ~/.venvs/publiclens/bin/activate ]; then
     source ~/.venvs/publiclens/bin/activate
 fi

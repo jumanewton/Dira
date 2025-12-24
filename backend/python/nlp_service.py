@@ -302,6 +302,35 @@ def analyze_image(request: AnalyzeImageRequest):
             
     return {"analysis": "Image analysis not available (No API Key)."}
 
+class InsightsRequest(BaseModel):
+    metrics: dict
+
+@app.post("/generate_insights")
+def generate_insights(request: InsightsRequest):
+    if GEMINI_API_KEY:
+        try:
+            metrics_str = json.dumps(request.metrics, indent=2)
+            prompt = f"""
+            You are a data analyst for a public reporting platform. 
+            Analyze the following metrics data and provide a concise "Executive Summary" of the current state of public reports.
+            Highlight key trends, areas of concern (e.g., high volume categories), and success metrics (e.g., resolution rate).
+            Use bullet points and bold text for emphasis. Keep it under 150 words.
+            
+            Metrics Data:
+            {metrics_str}
+            """
+            
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=prompt
+            )
+            return {"insights": response.text.strip()}
+        except Exception as e:
+            logging.error(f"Gemini insights generation failed: {e}")
+            return {"insights": "Could not generate insights at this time."}
+    
+    return {"insights": "AI Insights not available (No API Key)."}
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("NLP_PORT", 8001))

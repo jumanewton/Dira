@@ -1,5 +1,5 @@
 
-const JASECI_URL = ''; // Relative path due to proxy in package.json
+const JASECI_URL = process.env.REACT_APP_API_URL || ''; // Use env var or default to relative path
 
 export const runWalker = async (walkerName, context = {}) => {
     const token = localStorage.getItem('jac_token');
