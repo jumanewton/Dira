@@ -33,10 +33,5 @@ COPY --from=build /app/build ./build
 # Expose port (Heroku will override this but good for documentation)
 EXPOSE 3000
 
-# Start command
-RUN echo '#!/bin/sh' > /start.sh && \
-    echo 'echo "PORT is set to: $PORT"' >> /start.sh && \
-    echo 'exec serve -s build -l tcp://0.0.0.0:$PORT' >> /start.sh && \
-    chmod +x /start.sh
-
-CMD ["/start.sh"]
+# Start command - serve needs the port without tcp:// prefix
+CMD ["sh", "-c", "serve -s build -l $PORT"]
