@@ -3,7 +3,6 @@
 from fastapi import FastAPI
 import spacy
 from transformers import pipeline
-import weaviate
 from sentence_transformers import SentenceTransformer
 import json
 import os
@@ -16,9 +15,14 @@ from google import genai
 from google.genai import types
 
 # Add project root to Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(os.path.dirname(__file__))
 
-from vector_db.config import WEAVIATE_URL, COLLECTION_NAME
+# Import database layer
+from crud import (
+    store_report_embedding, 
+    find_duplicate_reports,
+    search_reports_by_similarity
+)
 
 # Load environment variables
 load_dotenv()
@@ -62,23 +66,6 @@ def get_embedding_model():
         logging.info("Loading SentenceTransformer model...")
         embed_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=CACHE_DIR)
     return embed_model
-
-try:
-    client = weaviate.Client(url=WEAVIATE_URL)
-    # Create collection if not exists
-    if not client.schema.exists(COLLECTION_NAME):
-        client.schema.create_class({
-            "class": COLLECTION_NAME,
-            "properties": [
-                {"name": "report_id", "dataType": ["string"]},
-                {"name": "title", "dataType": ["string"]},
-                {"name": "description", "dataType": ["string"]},
-            ],
-            "vectorizer": "none"  # we'll provide vectors
-        })
-except Exception as e:
-    # print(f"Warning: Could not connect to Weaviate at {WEAVIATE_URL}. Vector DB features will be disabled. Error: {e}")
-    client = None
 
 from pydantic import BaseModel
 
@@ -190,13 +177,23 @@ def store_embedding(request: StoreEmbeddingRequest):
         return {"status": "skipped", "reason": "Weaviate not connected"}
         
     text = request.title + " " + request.description
-    embedding = get_embedding_model().encode(text).tolist()
-    client.data_object.create({
-        "report_id": request.report_id,
-        "title": request.title,
-        "description": request.description
-    }, COLLECTION_NAME, vector=embedding)
-    return {"status": "stored"}
+@app.post("/store_embedding")
+def store_embedding(request: StoreEmbeddingRequest):
+    """Store report embedding in PostgreSQL"""
+    try:
+        text = request.title + " " + request.description
+        embedding = get_embedding_model().encode(text).tolist()
+        
+        # Store in PostgreSQL using pgvector
+        success = store_report_embedding(request.report_id, embedding)
+        
+        if success:
+            return {"status": "stored", "report_id": request.report_id}
+        else:
+            return {"status": "failed", "reason": "Report not found"}
+    except Exception as e:
+        logging.error(f"Error storing embedding: {e}")
+        return {"status": "error", "reason": str(e)}
 
 class FindDuplicatesRequest(BaseModel):
     report_id: str
@@ -205,40 +202,40 @@ class FindDuplicatesRequest(BaseModel):
     threshold: float = 0.8
 
 @app.post("/find_duplicates")
-def find_duplicates(request: FindDuplicatesRequest):
+def find_duplicates_endpoint(request: FindDuplicatesRequest):
+    """Find duplicate reports using pgvector similarity search"""
     logging.info(f"Finding duplicates for report {request.report_id}")
-    if not client:
-        logging.warning("Weaviate client not available")
-        return {"duplicates": []}
+    
+    try:
+        text = request.title + " " + request.description
+        embedding = get_embedding_model().encode(text).tolist()
         
-    text = request.title + " " + request.description
-    embedding = get_embedding_model().encode(text).tolist()
-    
-    response = (
-        client.query
-        .get(COLLECTION_NAME, ["report_id", "title", "description"])
-        .with_near_vector({
-            "vector": embedding,
-            "certainty": request.threshold
-        })
-        .with_additional(["certainty"])
-        .with_limit(100)
-        .do()
-    )
-    
-    duplicates = []
-    if "data" in response and "Get" in response["data"] and COLLECTION_NAME in response["data"]["Get"]:
-        results = response["data"]["Get"][COLLECTION_NAME]
-        for res in results:
-            if res["report_id"] != request.report_id:
-                # Add certainty to the result
-                if "_additional" in res:
-                    res["score"] = res["_additional"]["certainty"]
-                duplicates.append(res)
-                logging.info(f"Found duplicate: {res['report_id']} with score {res.get('score')}")
-    
-    logging.info(f"Found {len(duplicates)} duplicates")
-    return {"duplicates": duplicates}
+        # Use PostgreSQL/pgvector for duplicate detection
+        duplicates = find_duplicate_reports(
+            title=request.title,
+            description=request.description,
+            embedding=embedding,
+            threshold=request.threshold,
+            exclude_id=request.report_id
+        )
+        
+        # Format results to match old Weaviate format
+        formatted_duplicates = []
+        for dup in duplicates:
+            formatted_duplicates.append({
+                "report_id": dup['id'],
+                "title": dup['title'],
+                "description": dup['description'],
+                "score": dup['similarity_score']
+            })
+            logging.info(f"Found duplicate: {dup['id']} with score {dup['similarity_score']:.3f}")
+        
+        logging.info(f"Found {len(formatted_duplicates)} duplicates")
+        return {"duplicates": formatted_duplicates}
+        
+    except Exception as e:
+        logging.error(f"Error finding duplicates: {e}")
+        return {"duplicates": [], "error": str(e)}
 
 class DraftMessageRequest(BaseModel):
     title: str

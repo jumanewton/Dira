@@ -4,6 +4,8 @@ sentence-transformers
 weaviate-client<4.0.0
 python-dotenv
 google-genai
+psycopg2-binary
+pgvector
 
 fastapi
 uvicorn
