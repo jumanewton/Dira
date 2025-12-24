@@ -8,8 +8,12 @@ from sentence_transformers import SentenceTransformer
 import json
 import os
 import sys
+import base64
+import io
+from PIL import Image
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 # Add project root to Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -249,6 +253,40 @@ def draft_message(request: DraftMessageRequest):
         message = f"Urgent Report: {request.title}\n\n{request.description}\n\nUrgency: {request.urgency}\n\nPlease investigate immediately."
     
     return {"message": message}
+
+class AnalyzeImageRequest(BaseModel):
+    image_data: str # base64 encoded
+    mime_type: str = "image/jpeg"
+
+@app.post("/analyze_image")
+def analyze_image(request: AnalyzeImageRequest):
+    if not request.image_data:
+        return {"analysis": "No image provided."}
+        
+    if GEMINI_API_KEY:
+        try:
+            # Decode base64
+            image_data = request.image_data
+            if "," in image_data:
+                image_data = image_data.split(",")[1]
+            
+            image_bytes = base64.b64decode(image_data)
+            
+            prompt = "Analyze this image for a public report. Identify if there is any infrastructure damage, safety issue, or utility problem. If found, state 'Confirmed: [Issue Type], [Severity]'. Then provide a brief description."
+            
+            response = gemini_client.models.generate_content(
+                model=GEMINI_MODEL_NAME,
+                contents=[
+                    prompt,
+                    types.Part.from_bytes(data=image_bytes, mime_type=request.mime_type)
+                ]
+            )
+            return {"analysis": response.text.strip()}
+        except Exception as e:
+            logging.error(f"Gemini image analysis failed: {e}")
+            return {"analysis": "Image analysis failed."}
+            
+    return {"analysis": "Image analysis not available (No API Key)."}
 
 if __name__ == "__main__":
     import uvicorn

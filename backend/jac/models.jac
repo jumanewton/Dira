@@ -24,6 +24,8 @@ node Report {
     has submitted_at: str;
     has reporter: Reporter;
     has embedding: str;  # vector for duplicate detection as json string
+    has image_data: str; # base64 encoded image
+    has analysis_result: str; # AI analysis of the image
 }
 
 node Reporter {

@@ -17,6 +17,7 @@ google-genai
 fastapi
 uvicorn
 requests
+Pillow
 
 byllm
 jaseci

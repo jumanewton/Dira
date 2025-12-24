@@ -7,13 +7,30 @@ function ReportForm() {
     description: '',
     name: '',
     email: '',
-    anonymous: true
+    anonymous: true,
+    image_data: ''
   });
   const [status, setStatus] = useState('');
+  const [analysis, setAnalysis] = useState('');
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          image_data: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('Submitting...');
+    setAnalysis('');
 
     try {
       // Call IntakeAgent walker
@@ -22,7 +39,8 @@ function ReportForm() {
           title: formData.title,
           description: formData.description,
           name: formData.anonymous ? '' : formData.name,
-          email: formData.anonymous ? '' : formData.email
+          email: formData.anonymous ? '' : formData.email,
+          image_data: formData.image_data
         }
       });
 
@@ -30,24 +48,34 @@ function ReportForm() {
       
       // Handle different response structures
       let reportId = "Unknown";
-      if (response.report_id) {
-          reportId = response.report_id;
-      } else if (Array.isArray(response) && response.length > 0 && response[0].report_id) {
-          reportId = response[0].report_id;
-      } else if (response.report && Array.isArray(response.report) && response.report.length > 0) {
-          reportId = response.report[0].report_id;
-      } else if (response.reports && Array.isArray(response.reports) && response.reports.length > 0) {
-          reportId = response.reports[0].report_id;
-      }
+      let analysisResult = "";
+      
+      // Helper to extract data from response
+      const extractData = (res) => {
+          if (res.report_id) return res;
+          if (Array.isArray(res) && res.length > 0) return extractData(res[0]);
+          if (res.report) return extractData(res.report);
+          if (res.reports) return extractData(res.reports);
+          return {};
+      };
+      
+      const data = extractData(response);
+      if (data.report_id) reportId = data.report_id;
+      if (data.analysis_result) analysisResult = data.analysis_result;
 
       setStatus(`Report submitted successfully! ID: ${reportId}`);
+      if (analysisResult) {
+          setAnalysis(analysisResult);
+      }
+
       // Reset form
       setFormData({
         title: '',
         description: '',
         name: '',
         email: '',
-        anonymous: true
+        anonymous: true,
+        image_data: ''
       });
     } catch (error) {
       setStatus(`Error: ${error.message}`);
@@ -91,6 +119,16 @@ function ReportForm() {
             required
             placeholder="Provide detailed information about the issue..."
             rows="6"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="image">Upload Image (Optional)</label>
+          <input
+            type="file"
+            id="image"
+            accept="image/*"
+            onChange={handleImageChange}
           />
         </div>
 
@@ -139,6 +177,13 @@ function ReportForm() {
       {status && (
         <div className={`status-message ${status.includes('Error') ? 'error' : 'success'}`}>
           {status}
+        </div>
+      )}
+      
+      {analysis && (
+        <div className="analysis-result" style={{marginTop: '20px', padding: '15px', backgroundColor: '#e8f5e9', borderRadius: '5px', borderLeft: '5px solid #4caf50'}}>
+          <h3 style={{marginTop: 0}}>AI Analysis</h3>
+          <p style={{whiteSpace: 'pre-wrap'}}>{analysis}</p>
         </div>
       )}
     </div>

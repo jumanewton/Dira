@@ -292,6 +292,19 @@ walker IntakeAgent {
         response = requests.post("http://127.0.0.1:8001/extract_entities", json={"text": text});
         entities = response.json() if response.status_code == 200 else {};
         
+        # Image Analysis
+        image_data = "";
+        analysis_result = "";
+        if "image_data" in self.report_data {
+            image_data = self.report_data["image_data"];
+            if image_data {
+                img_response = requests.post("http://127.0.0.1:8001/analyze_image", json={"image_data": image_data});
+                if img_response.status_code == 200 {
+                    analysis_result = img_response.json()["analysis"];
+                }
+            }
+        }
+
         # Create report node
         new_report = Report(
             id=str(uuid.uuid4()),
@@ -309,13 +322,18 @@ walker IntakeAgent {
                 email=self.report_data["email"],
                 is_anonymous=(self.report_data["name"] == "")
             ),
-            embedding="[]"
+            embedding="[]",
+            image_data=image_data,
+            analysis_result=analysis_result
         );
         
         # Connect to root
         root ++> new_report;
 
-        report {"report_id": new_report.id};
+        report {
+            "report_id": new_report.id,
+            "analysis_result": new_report.analysis_result
+        };
         
         visit new_report;
     }
