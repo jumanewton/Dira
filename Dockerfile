@@ -1,6 +1,6 @@
 # Combined Dockerfile for Heroku Backend
-# Using python 3.11 to ensure jaclang compatibility
-FROM python:3.11-slim
+# Using python 3.12 to ensure jaclang compatibility (requires typing.override)
+FROM python:3.12-slim
 
 WORKDIR /app
 
