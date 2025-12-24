@@ -34,4 +34,9 @@ COPY --from=build /app/build ./build
 EXPOSE 3000
 
 # Start command
-CMD ["/bin/sh", "-c", "serve -s build -l $PORT"]
+RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'echo "PORT is set to: $PORT"' >> /start.sh && \
+    echo 'exec serve -s build -l tcp://0.0.0.0:$PORT' >> /start.sh && \
+    chmod +x /start.sh
+
+CMD ["/start.sh"]
