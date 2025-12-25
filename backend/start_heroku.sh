@@ -53,4 +53,4 @@ sleep 5
 echo "📡 Starting JAC Backend on port $PORT..."
 cd ../jac
 export PYTHONUNBUFFERED=1
-jac serve main.jac --host 0.0.0.0 --port $PORT | grep --line-buffered -vE "^\{|^\["
+jac serve main.jac --port $PORT | grep --line-buffered -vE "^\{|^\["
