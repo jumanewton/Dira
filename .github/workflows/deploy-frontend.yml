@@ -32,6 +32,7 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           docker build -t registry.heroku.com/dira-platform-frontend/web \
+            --build-arg REACT_APP_API_URL=https://dira-platform-backend-ef1b216ebc0d.herokuapp.com \
             -f docker/Dockerfile.heroku_frontend .
           docker push registry.heroku.com/dira-platform-frontend/web
       
