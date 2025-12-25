@@ -735,6 +735,96 @@ walker get_analytics {
     }
 }
 
+walker generate_ai_insights {
+    has metrics: dict;
+    has insights: str = "";
+
+    can generate with entry {
+        # Generate AI-powered insights based on the metrics
+        totalReports = self.metrics.get("totalReports", 0);
+        uniqueReports = self.metrics.get("uniqueReports", 0);
+        duplicateReports = self.metrics.get("duplicateReports", 0);
+        resolvedReports = self.metrics.get("resolvedReports", 0);
+        avgResolutionTime = self.metrics.get("avgResolutionTime", 0);
+        reportsByCategory = self.metrics.get("reportsByCategory", {});
+        reportsByUrgency = self.metrics.get("reportsByUrgency", {});
+        
+        # Calculate resolution rate
+        resolutionRate = 0.0;
+        if totalReports > 0 {
+            resolutionRate = (resolvedReports / totalReports) * 100;
+        }
+        
+        # Find most common category
+        mostCommonCategory = "None";
+        maxCategoryCount = 0;
+        for category in reportsByCategory {
+            if reportsByCategory[category] > maxCategoryCount {
+                maxCategoryCount = reportsByCategory[category];
+                mostCommonCategory = category;
+            }
+        }
+        
+        # Find most urgent issues
+        urgentCount = reportsByUrgency.get("high", 0);
+        
+        # Generate comprehensive insights
+        self.insights = f"## Executive Summary\n\n";
+        self.insights += f"**Overall Performance**: The system has received **{totalReports}** total reports, with **{uniqueReports}** unique issues identified. ";
+        
+        if duplicateReports > 0 {
+            duplicatePercentage = (duplicateReports / totalReports) * 100;
+            self.insights += f"Approximately **{duplicatePercentage:.1f}%** of reports are duplicates, indicating either recurring issues or effective duplicate detection.\n\n";
+        } else {
+            self.insights += f"No duplicate reports detected, indicating diverse issue reporting.\n\n";
+        }
+        
+        self.insights += f"### Resolution Metrics\n\n";
+        self.insights += f"- **Resolution Rate**: {resolutionRate:.1f}% ({resolvedReports} out of {totalReports} reports)\n";
+        self.insights += f"- **Average Resolution Time**: {avgResolutionTime:.1f} days\n";
+        
+        if resolutionRate >= 80 {
+            self.insights += f"- **Assessment**: Excellent resolution performance, maintaining high public trust.\n\n";
+        } elif resolutionRate >= 60 {
+            self.insights += f"- **Assessment**: Good resolution rate, with room for improvement in efficiency.\n\n";
+        } elif resolutionRate >= 40 {
+            self.insights += f"- **Assessment**: Moderate resolution rate, consider increasing response capacity.\n\n";
+        } else {
+            self.insights += f"- **Assessment**: Low resolution rate, immediate attention needed to improve public service delivery.\n\n";
+        }
+        
+        self.insights += f"### Key Areas of Concern\n\n";
+        self.insights += f"**Most Reported Category**: *{mostCommonCategory}* with {maxCategoryCount} reports. This indicates a critical area requiring focused intervention and resource allocation.\n\n";
+        
+        if urgentCount > 0 {
+            urgentPercentage = (urgentCount / totalReports) * 100;
+            self.insights += f"**High-Priority Issues**: {urgentCount} reports ({urgentPercentage:.1f}%) are marked as high urgency, requiring immediate attention to prevent service degradation.\n\n";
+        }
+        
+        self.insights += f"### Recommendations\n\n";
+        
+        if avgResolutionTime > 7 {
+            self.insights += f"1. **Reduce Resolution Time**: Current average of {avgResolutionTime:.1f} days exceeds optimal response time. Consider workflow optimization or additional resources.\n";
+        }
+        
+        if resolutionRate < 70 {
+            self.insights += f"2. **Improve Resolution Rate**: Focus on closing pending reports to build public confidence in the system.\n";
+        }
+        
+        if urgentCount > totalReports * 0.3 {
+            self.insights += f"3. **Address Urgent Issues**: High proportion of urgent reports suggests systemic issues requiring strategic intervention.\n";
+        }
+        
+        if duplicateReports > totalReports * 0.2 {
+            self.insights += f"4. **Investigate Recurring Issues**: High duplicate rate indicates persistent problems that may need root cause analysis.\n";
+        } else {
+            self.insights += f"4. **Maintain Service Quality**: Continue current practices while monitoring emerging trends.\n";
+        }
+        
+        report {"insights": self.insights};
+    }
+}
+
 walker StatusUpdateAgent {
     has report_id: str;
     has status: str;

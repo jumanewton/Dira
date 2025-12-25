@@ -198,6 +198,40 @@ html, body {
   transform: translateY(-2px);
 }
 
+.ai-insights-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+}
+
+.ai-insights-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #66BB6A 0%, #43A047 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+}
+
+.ai-insights-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+[data-theme='dark'] .ai-insights-btn {
+  background: linear-gradient(135deg, #388E3C 0%, #1B5E20 100%);
+  box-shadow: 0 2px 5px rgba(56, 142, 60, 0.4);
+}
+
+[data-theme='dark'] .ai-insights-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.5);
+}
+
 .status-message {
   margin-top: 1rem;
   padding: 1rem;

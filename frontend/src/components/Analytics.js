@@ -231,17 +231,18 @@ function Analytics() {
             <button 
                 onClick={generateAIInsights} 
                 disabled={generatingInsights}
-                className="submit-btn"
-                style={{width: 'auto', padding: '8px 16px', margin: 0}}
+                className="ai-insights-btn"
             >
-                {generatingInsights ? 'Generating...' : 'Generate AI Executive Summary'}
+                {generatingInsights ? '🔄 Generating...' : '✨ Generate AI Executive Summary'}
             </button>
         </div>
 
         {aiInsights && (
-            <div className="insight-card" style={{marginBottom: '20px', borderLeft: '6px solid #9c27b0', backgroundColor: '#f3e5f5'}}>
-                <h4 style={{color: '#7b1fa2'}}>AI Executive Summary</h4>
-                <div style={{lineHeight: '1.6'}}>
+            <div className="insight-card" style={{marginBottom: '20px', borderLeft: '6px solid #4CAF50', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)'}}>
+                <h4 style={{color: '#4CAF50', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                    <span>🤖</span> AI Executive Summary
+                </h4>
+                <div style={{lineHeight: '1.6', color: 'var(--text-primary)'}}>
                     <ReactMarkdown>{aiInsights}</ReactMarkdown>
                 </div>
             </div>
