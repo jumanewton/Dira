@@ -1,5 +1,7 @@
 # Dira - Feedback and Issue-Tracking Platform
 
+![Dira Dashboard](docs/images/dashboard.png)
+
 ## Overview
 Dira is a feedback and issue-tracking platform for government organisations and public utilities. It uses Jaseci's Jac language with OSP graphs and byLLM agents to process, classify, and route public reports efficiently.
 
@@ -10,6 +12,16 @@ Dira is a feedback and issue-tracking platform for government organisations and 
 - **Semantic Duplicate Detection**: Uses vector embeddings to identify and group similar reports.
 - **Jac Client Frontend**: React application integrated with `jac-client` for seamless backend communication.
 - **Transparency**: Public dashboards and organization-specific views.
+- **Multimodal Verification**: Analyzes uploaded images using Google Gemini Vision to verify incident severity and tag hazards automatically.
+
+## Screenshots
+
+| AI Analysis | Reports Overview |
+|:---:|:---:|
+| ![AI Analysis](docs/images/ai_analysis.png) | ![Reports](docs/images/reports.png) |
+
+### Analytics Summary
+![Analytics Summary](docs/images/summary.png)
 
 ## Architecture
 - **Backend**: Jac (core) with OSP graphs.
@@ -17,9 +29,9 @@ Dira is a feedback and issue-tracking platform for government organisations and 
 - **NLP Service**: Python microservice for entity extraction, classification, and vector embeddings.
 - **Vector DB**: PostgreSQL (pgvector) for semantic search.
 - **Integrations**: SMTP/API/SMS for routing.
-- **Database API**: (Experimental) Python FastAPI service for PostgreSQL integration.
+- **Database API**: Python FastAPI service for PostgreSQL integration.
 
-See [Architecture Diagram](architecture.md) for agent interaction details.
+See [Architecture Diagram](docs/architecture.md) for agent interaction details.
 
 ## Setup Instructions
 
@@ -59,7 +71,7 @@ npm install
 ### 3. Run Services
 Start services in separate terminals. 
 
-**Note:** The default configuration runs the Jac Backend on port 8002. Ensure no other service (like the experimental DB API) is using this port.
+**Note:** The default configuration runs the Jac Backend on port 8002. Ensure no other service (like the DB API) is using this port.
 
 **1. NLP Service** (port 8001):
 ```bash
@@ -105,8 +117,8 @@ The React frontend is deployed to Vercel.
 - **Configuration:** `REACT_APP_API_URL` environment variable points to the Heroku Backend URL.
 
 ## Documentation
-- [Agent Interaction Diagram](architecture.md)
-- [Evaluation Plan](evaluation_plan.md)
+- [Agent Interaction Diagram](docs/architecture.md)
+- [Evaluation Plan](docs/evaluation_plan.md)
 
 ## Evaluation
 The project includes an evaluation plan covering:
@@ -115,4 +127,4 @@ The project includes an evaluation plan covering:
 - Routing Latency
 - Qualitative Message Quality
 
-See [Evaluation Plan](evaluation_plan.md) for details.
+See [Evaluation Plan](docs/evaluation_plan.md) for details.
