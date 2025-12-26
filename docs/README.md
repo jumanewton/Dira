@@ -5,18 +5,19 @@ Dira is a feedback and issue-tracking platform for government organisations and 
 
 ## Features
 - **Multi-Agent System**: Intake, Classifier, Duplicate Detector, and Router agents working in concert.
-- **Native byLLM Integration**: Uses Jac's `by llm` capability for classification, urgency assessment, and message drafting.
+- **NLP Service Integration**: Uses a dedicated Python NLP microservice for classification, urgency assessment, and entity extraction.
 - **OSP Graph**: Models organizations, reports, and facilities spatially for intelligent routing.
 - **Semantic Duplicate Detection**: Uses vector embeddings to identify and group similar reports.
 - **Jac Client Frontend**: React application integrated with `jac-client` for seamless backend communication.
 - **Transparency**: Public dashboards and organization-specific views.
 
 ## Architecture
-- **Backend**: Jac (core) with OSP graphs and native `byLLM` agents.
+- **Backend**: Jac (core) with OSP graphs.
 - **Frontend**: React using `jac-client` library.
-- **NLP Service**: Python microservice for entity extraction and vector embeddings.
-- **Vector DB**: Weaviate for semantic search.
+- **NLP Service**: Python microservice for entity extraction, classification, and vector embeddings.
+- **Vector DB**: PostgreSQL (pgvector) for semantic search.
 - **Integrations**: SMTP/API/SMS for routing.
+- **Database API**: (Experimental) Python FastAPI service for PostgreSQL integration.
 
 See [Architecture Diagram](architecture.md) for agent interaction details.
 
@@ -26,6 +27,7 @@ See [Architecture Diagram](architecture.md) for agent interaction details.
 - Python 3.8+
 - Node.js 16+
 - Docker (optional for deployment)
+- PostgreSQL with pgvector extension
 
 ### 1. Environment Configuration
 Copy the `.env` file and configure your settings:
@@ -36,7 +38,7 @@ cp .env .env.local  # Optional: for local overrides
 **Required Environment Variables:**
 - `GEMINI_API_KEY`: Google Gemini API key for NLP tasks
 - `SMTP_USERNAME` & `SMTP_PASSWORD`: Email credentials for notifications
-- `WEAVIATE_URL`: Vector database connection
+- `DATABASE_URL`: PostgreSQL connection string
 - `HUGGINGFACE_CACHE_DIR`: Directory for ML model caching
 
 ### 2. Install Dependencies
@@ -55,39 +57,36 @@ npm install
 ```
 
 ### 3. Run Services
-Start services in separate terminals:
+Start services in separate terminals. 
 
-**1. Weaviate Vector DB** (port 8080):
-```bash
-docker compose -f docker/docker-compose.yml up -d weaviate
-```
+**Note:** The default configuration runs the Jac Backend on port 8002. Ensure no other service (like the experimental DB API) is using this port.
 
-**2. NLP Service** (port 8001):
+**1. NLP Service** (port 8001):
 ```bash
 cd backend/python
 python nlp_service.py
 ```
 
-**3. Notification Service** (port 8003):
+**2. Notification Service** (port 8003):
 ```bash
 cd backend/python
 python notification_service.py
 ```
 
-**4. Jaseci Backend** (port 8002):
+**3. Jaseci Backend** (port 8002):
 ```bash
 cd backend/jac
 jac serve main.jac --port 8002
 ```
 
-**5. Frontend** (port 3000):
+**4. Frontend** (port 3000):
 ```bash
 cd frontend
 npm start
 ```
 
 ### 4. Load Seed Data
-To populate the system with realistic demo data:
+To populate the system with realistic demo data (requires Jac Backend running on port 8002):
 ```bash
 python load_seed_data.py
 ```

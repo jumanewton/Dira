@@ -9,7 +9,7 @@ sequenceDiagram
     participant ClassifierAgent
     participant DuplicateDetectorAgent
     participant RouterAgent
-    participant ExternalServices as External Services (VectorDB/Email)
+    participant ExternalServices as External Services (PostgreSQL/Email)
 
     User->>IntakeAgent: Submit Report (Title, Desc)
     activate IntakeAgent
@@ -19,8 +19,8 @@ sequenceDiagram
     deactivate IntakeAgent
     
     activate ClassifierAgent
-    ClassifierAgent->>ClassifierAgent: byLLM: Classify Category
-    ClassifierAgent->>ClassifierAgent: byLLM: Assess Urgency
+    ClassifierAgent->>ExternalServices: NLP Service: Classify Category
+    ClassifierAgent->>ExternalServices: NLP Service: Assess Urgency
     ClassifierAgent->>ExternalServices: Store Embedding
     ClassifierAgent->>DuplicateDetectorAgent: Spawn(Report)
     deactivate ClassifierAgent
@@ -46,7 +46,7 @@ sequenceDiagram
     else Status is Unique
         RouterAgent->>RouterAgent: Traverse Graph (Find Org)
         loop For Each Selected Org
-            RouterAgent->>RouterAgent: byLLM: Draft Notification
+            RouterAgent->>ExternalServices: NLP Service: Draft Notification
             RouterAgent->>ExternalServices: Send Email
             RouterAgent->>RouterAgent: Create 'HandledBy' Edge
         end
@@ -60,6 +60,6 @@ sequenceDiagram
 | Agent | Responsibility | Triggers |
 |-------|----------------|----------|
 | **IntakeAgent** | Validates input, creates graph nodes, initializes report state. | User submission via API/Frontend. |
-| **ClassifierAgent** | Uses `byLLM` to determine category and urgency. Stores vector embeddings. | Spawning by `IntakeAgent`. |
+| **ClassifierAgent** | Uses NLP Service to determine category and urgency. Stores vector embeddings. | Spawning by `IntakeAgent`. |
 | **DuplicateDetectorAgent** | Queries vector database to find semantic duplicates. Updates status. | Spawning by `ClassifierAgent`. |
-| **RouterAgent** | Traverses OSP graph to find relevant organizations. Drafts messages via `byLLM` and sends notifications. | Spawning by `DuplicateDetectorAgent`. |
+| **RouterAgent** | Traverses OSP graph to find relevant organizations. Drafts messages via NLP Service and sends notifications. | Spawning by `DuplicateDetectorAgent`. |

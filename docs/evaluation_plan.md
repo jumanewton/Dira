@@ -4,7 +4,7 @@ This document outlines the metrics and methods used to evaluate the performance 
 
 ## 1. Technical Performance Metrics
 
-### 1.1 Classification Accuracy (byLLM)
+### 1.1 Classification Accuracy (NLP Service)
 *   **Metric:** Accuracy (%) of assigning the correct category (Infrastructure, Safety, Utility, etc.) compared to ground truth labels.
 *   **Method:** Run a test set of 50 pre-labeled reports through the `ClassifierAgent`.
 *   **Target:** > 85% accuracy.
@@ -21,7 +21,7 @@ This document outlines the metrics and methods used to evaluate the performance 
 
 ## 2. Qualitative Evaluation
 
-### 2.1 Message Quality (byLLM)
+### 2.1 Message Quality (NLP Service)
 *   **Metric:** Human rating (1-5 scale) of the drafted notification emails.
 *   **Criteria:** Professionalism, conciseness, and inclusion of key details (Title, Urgency).
 *   **Method:** Review 10 randomly generated drafts.

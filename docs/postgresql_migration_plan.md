@@ -4,13 +4,13 @@
 Migrate from ephemeral JAC session files to persistent PostgreSQL storage with pgvector for embeddings.
 
 ## Current State
-- **Data**: Stored in `backend/jac/main.session` (ephemeral, lost on restart)
-- **Embeddings**: Not stored anywhere (Weaviate disconnected)
-- **PostgreSQL**: Provisioned on Heroku but unused
+- **Data**: Stored in `backend/jac/main.session` (ephemeral, lost on restart) for main flow.
+- **Embeddings**: Stored in PostgreSQL (pgvector) by NLP service, but not fully integrated with Jac backend.
+- **PostgreSQL**: Provisioned and Schema created. DB API service running.
 
 ## Migration Steps
 
-### Phase 1: Setup PostgreSQL with pgvector ✓
+### Phase 1: Setup PostgreSQL with pgvector ✓ (Done)
 **Duration**: ~30 mins
 
 1. Enable pgvector extension on Heroku Postgres
@@ -18,10 +18,10 @@ Migrate from ephemeral JAC session files to persistent PostgreSQL storage with p
 3. Create embeddings table with vector column
 4. Test connection from backend
 
-### Phase 2: Create Database Layer
+### Phase 2: Create Database Layer ✓ (Done)
 **Duration**: ~2 hours
 
-1. Create Python database models (SQLAlchemy)
+1. Create Python database models (SQLAlchemy/Pydantic)
 2. Create CRUD operations for:
    - Organisations
    - Facilities
@@ -29,7 +29,7 @@ Migrate from ephemeral JAC session files to persistent PostgreSQL storage with p
    - Reports
 3. Create vector operations (store/search embeddings)
 
-### Phase 3: Modify JAC Backend
+### Phase 3: Modify JAC Backend (Pending)
 **Duration**: ~3 hours
 
 1. Update walkers to use PostgreSQL instead of JAC nodes:
@@ -40,7 +40,7 @@ Migrate from ephemeral JAC session files to persistent PostgreSQL storage with p
 2. Keep JAC for orchestration/business logic
 3. Remove dependency on session files
 
-### Phase 4: Data Seeding
+### Phase 4: Data Seeding ✓ (Done)
 **Duration**: ~1 hour
 
 1. Seed initial organisations
