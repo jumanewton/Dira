@@ -47,7 +47,7 @@ sequenceDiagram
         RouterAgent->>RouterAgent: Traverse Graph (Find Org)
         loop For Each Selected Org
             RouterAgent->>ExternalServices: NLP Service: Draft Notification
-            RouterAgent->>ExternalServices: Send Email
+            RouterAgent->>ExternalServices: Notification Service: Send Email
             RouterAgent->>RouterAgent: Create 'HandledBy' Edge
         end
         RouterAgent->>RouterAgent: Mark Status = "routed"

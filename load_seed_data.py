@@ -14,14 +14,14 @@ def load_seed_data():
     
     # 1. Read the seed file
     if not os.path.exists(SEED_FILE):
-        print(f"❌ Error: {SEED_FILE} not found.")
+        print(f"Error: {SEED_FILE} not found.")
         return
 
     try:
         with open(SEED_FILE, 'r') as f:
             data = json.load(f)
     except json.JSONDecodeError:
-        print(f"❌ Error: Failed to decode JSON from {SEED_FILE}.")
+        print(f"Error: Failed to decode JSON from {SEED_FILE}.")
         return
 
     # 2. Extract reports
@@ -40,7 +40,7 @@ def load_seed_data():
         reports_to_load = data
     
     if not reports_to_load:
-        print("❌ Error: No reports found in the JSON structure.")
+        print("Error: No reports found in the JSON structure.")
         return
 
     print(f"Found {len(reports_to_load)} reports to load.")
@@ -68,10 +68,10 @@ def load_seed_data():
             response = requests.post(url, json=payload)
             
             if response.status_code == 200:
-                print(f"✅ [{i+1}/{len(reports_to_load)}] Loaded: {report.get('title')[:30]}...")
+                print(f"[{i+1}/{len(reports_to_load)}] Loaded: {report.get('title')[:30]}...")
                 success_count += 1
             else:
-                print(f"❌ [{i+1}/{len(reports_to_load)}] Failed: {report.get('title')[:30]}... (Status: {response.status_code})")
+                print(f"[{i+1}/{len(reports_to_load)}] Failed: {report.get('title')[:30]}... (Status: {response.status_code})")
                 print(f"   Response: {response.text}")
                 fail_count += 1
                 
@@ -79,10 +79,10 @@ def load_seed_data():
             time.sleep(0.5)
             
         except requests.exceptions.ConnectionError:
-            print(f"❌ Connection Error: Could not connect to {JAC_BACKEND_URL}. Is the backend running?")
+            print(f"Connection Error: Could not connect to {JAC_BACKEND_URL}. Is the backend running?")
             break
         except Exception as e:
-            print(f"❌ Error processing report: {e}")
+            print(f"Error processing report: {e}")
             fail_count += 1
 
     print("\n--- Summary ---")

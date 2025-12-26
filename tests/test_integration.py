@@ -12,15 +12,15 @@ def test_direct_email():
             "body": "This is a direct test from the test script."
         })
         if response.status_code == 200:
-            print("✅ Direct email request successful.")
+            print("Direct email request successful.")
             print(f"Response: {response.json()}")
         else:
-            print(f"❌ Direct email request failed with status {response.status_code}")
+            print(f"Direct email request failed with status {response.status_code}")
             print(f"Response: {response.text}")
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to Notification Service on port 8003. Is it running?")
+        print("Could not connect to Notification Service on port 8003. Is it running?")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
 
 def test_jac_flow():
     print("\n--- Testing Full Flow via Jac (Port 8002) ---")
@@ -51,17 +51,17 @@ def test_jac_flow():
         response = requests.post(url, json=payload)
         
         if response.status_code == 200:
-            print("✅ Jac walker executed successfully.")
+            print("Jac walker executed successfully.")
             print(f"Response: {response.json()}")
             print("Check your email (ccs00056021@student.maseno.ac.ke) and the notification_service.log file.")
         else:
-            print(f"❌ Jac walker failed with status {response.status_code}")
+            print(f"Jac walker failed with status {response.status_code}")
             print(f"Response: {response.text}")
             
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to Jac Backend on port 8002. Is it running?")
+        print("Could not connect to Jac Backend on port 8002. Is it running?")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     test_direct_email()

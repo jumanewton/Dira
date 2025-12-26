@@ -171,18 +171,41 @@ walker RouterAgent {
             if org.contact_email {
                 print("RouterWalker: Sending email to " + org.contact_email);
                 try {
-                    send_response = email_tool.send_email_tool(
-                        to=org.contact_email,
-                        subject="Public Report: " + here.title,
-                        body=message
-                    );
-                    if send_response["status"] == "sent" {
-                        print("RouterWalker: Email sent successfully.");
+                    # Try using the Notification Service first
+                    notif_response = requests.post("http://127.0.0.1:8003/send_email", json={
+                        "to": org.contact_email,
+                        "subject": "Public Report: " + here.title,
+                        "body": message
+                    });
+                    
+                    if notif_response.status_code == 200 {
+                        print("RouterWalker: Email sent successfully via Notification Service.");
                     } else {
-                        print("RouterWalker: Email send failed.");
+                        # Fallback to local email tool
+                        print("RouterWalker: Notification Service failed, falling back to local tool.");
+                        send_response = email_tool.send_email_tool(
+                            to=org.contact_email,
+                            subject="Public Report: " + here.title,
+                            body=message
+                        );
+                        if send_response["status"] == "sent" {
+                            print("RouterWalker: Email sent successfully via local tool.");
+                        } else {
+                            print("RouterWalker: Email send failed.");
+                        }
                     }
                 } except Exception as e {
                     print("RouterWalker: Email send exception: " + str(e));
+                    # Fallback to local email tool
+                    try {
+                        send_response = email_tool.send_email_tool(
+                            to=org.contact_email,
+                            subject="Public Report: " + here.title,
+                            body=message
+                        );
+                    } except Exception as e2 {
+                        print("RouterWalker: Fallback failed: " + str(e2));
+                    }
                 }
             } else {
                 print("RouterWalker: No contact email for org " + org.name);

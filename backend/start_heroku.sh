@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Dira Backend Services on Heroku"
+echo "Starting Dira Backend Services on Heroku"
 
 # Parse DATABASE_URL to individual components for pg_isready
 if [ -n "$DATABASE_URL" ]; then
@@ -12,10 +12,10 @@ if [ -n "$DATABASE_URL" ]; then
 fi
 
 # Wait for database to be ready
-echo "⏳ Waiting for database..."
+echo "Waiting for database..."
 for i in {1..30}; do
   if pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" 2>/dev/null; then
-    echo "✅ Database is ready!"
+    echo " Database is ready!"
     break
   fi
   echo "Attempt $i/30: Database not ready, waiting..."
@@ -23,40 +23,46 @@ for i in {1..30}; do
 done
 
 # Run database setup (idempotent)
-echo "📋 Setting up database schema..."
+echo "Setting up database schema..."
 cd backend
-python3 setup_db.py || echo "⚠️  Schema setup failed or already exists"
+python3 setup_db.py || echo "  Schema setup failed or already exists"
 
 # Seed organisations if needed
-echo "🌱 Seeding organisations..."
-python3 seed_orgs_kenya.py || echo "⚠️  Org seeding failed or already done"
-
+echo "Seeding organisations..."
+python3 seed_orgs_kenya.py || echo "  Org seeding failed or already done"
 # Start Database API in the background on port 8002
-echo "🔧 Starting Database API on port 8002..."
+echo "Starting Database API on port 8002..."
 cd python
 python3 db_api.py &
 DB_API_PID=$!
 echo "Database API PID: $DB_API_PID"
 
 # Start NLP Service in the background on port 8001
-echo "🧠 Starting NLP Service on port 8001..."
+echo "Starting NLP Service on port 8001..."
 export NLP_PORT=8001
 python3 nlp_service.py &
 NLP_PID=$!
 echo "NLP Service PID: $NLP_PID"
 
+# Start Notification Service in the background on port 8003
+echo "Starting Notification Service on port 8003..."
+export NOTIFICATION_PORT=8003
+python3 notification_service.py &
+NOTIF_PID=$!
+echo "Notification Service PID: $NOTIF_PID"
+
 # Wait for services to be ready
-echo "⏳ Waiting for services to start..."
+echo "Waiting for services to start..."
 sleep 5
 
 # Start the JAC Server on the port provided by Heroku ($PORT)
-echo "📡 Starting JAC Backend on port $PORT..."
+echo "Starting JAC Backend on port $PORT..."
 cd ../jac
 
 # Build JAC code to bytecode
-echo "🔨 Building JAC bytecode..."
-jac build main.jac || { echo "❌ JAC build failed"; exit 1; }
-echo "✅ JAC build complete!"
+echo "Building JAC bytecode..."
+jac build main.jac || { echo "JAC build failed"; exit 1; }
+echo "JAC build complete!"
 
 export PYTHONUNBUFFERED=1
 jac serve main.jac --port $PORT | grep --line-buffered -vE "^\{|^\["

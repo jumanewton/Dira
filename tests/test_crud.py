@@ -15,10 +15,10 @@ import crud
 def test_crud_operations():
     """Test all CRUD operations"""
     
-    print("🧪 Testing CRUD Operations\n")
+    print("Testing CRUD Operations\n")
     
     # Test 1: Create Organisation
-    print("1️⃣  Testing Organisation CRUD...")
+    print("Testing Organisation CRUD...")
     org = Organisation(
         name="City Water Department",
         type="utility",
@@ -26,39 +26,39 @@ def test_crud_operations():
         facilities=["Plant A", "Plant B"]
     )
     org_id = crud.create_organisation(org)
-    print(f"   ✅ Created organisation: {org_id}")
+    print(f"   Created organisation: {org_id}")
     
     # Read organisation
     retrieved_org = crud.get_organisation(org_id)
     assert retrieved_org.name == "City Water Department"
-    print(f"   ✅ Retrieved organisation: {retrieved_org.name}")
+    print(f"   Retrieved organisation: {retrieved_org.name}")
     
     # Update organisation
     crud.update_organisation(org_id, contact_email="newwater@city.gov")
     updated_org = crud.get_organisation(org_id)
     assert updated_org.contact_email == "newwater@city.gov"
-    print(f"   ✅ Updated organisation email")
+    print(f"   Updated organisation email")
     
     # Get all organisations
     all_orgs = crud.get_all_organisations()
-    print(f"   ✅ Retrieved {len(all_orgs)} organisations")
+    print(f"   Retrieved {len(all_orgs)} organisations")
     
     # Test 2: Create Reporter
-    print("\n2️⃣  Testing Reporter CRUD...")
+    print("\nTesting Reporter CRUD...")
     reporter = Reporter(
         name="John Doe",
         email="john@example.com",
         is_anonymous=False
     )
     reporter_id = crud.create_reporter(reporter)
-    print(f"   ✅ Created reporter: {reporter_id}")
+    print(f"   Created reporter: {reporter_id}")
     
     retrieved_reporter = crud.get_reporter(reporter_id)
     assert retrieved_reporter.email == "john@example.com"
-    print(f"   ✅ Retrieved reporter: {retrieved_reporter.name}")
+    print(f"   Retrieved reporter: {retrieved_reporter.name}")
     
     # Test 3: Create Report with Embedding
-    print("\n3️⃣  Testing Report CRUD...")
+    print("\nTesting Report CRUD...")
     
     # Create a test embedding (384 dimensions)
     test_embedding = [0.1] * 384
@@ -75,22 +75,22 @@ def test_crud_operations():
         embedding=test_embedding
     )
     report_id = crud.create_report(report)
-    print(f"   ✅ Created report with embedding: {report_id}")
+    print(f"   Created report with embedding: {report_id}")
     
     retrieved_report = crud.get_report(report_id)
     assert retrieved_report.title == "Water Main Break on Elm Street"
     assert retrieved_report.embedding is not None
-    print(f"   ✅ Retrieved report: {retrieved_report.title}")
-    print(f"   ✅ Embedding dimension: {len(retrieved_report.embedding)}")
+    print(f"   Retrieved report: {retrieved_report.title}")
+    print(f"   Embedding dimension: {len(retrieved_report.embedding)}")
     
     # Update report status
     crud.update_report(report_id, status="routed")
     updated_report = crud.get_report(report_id)
     assert updated_report.status == "routed"
-    print(f"   ✅ Updated report status to: {updated_report.status}")
+    print(f"   Updated report status to: {updated_report.status}")
     
     # Test 4: Vector Similarity Search
-    print("\n4️⃣  Testing Vector Similarity Search...")
+    print("\nTesting Vector Similarity Search...")
     
     # Create a second similar report
     similar_report = Report(
@@ -104,7 +104,7 @@ def test_crud_operations():
         embedding=[0.11] * 384  # Slightly different embedding (similar)
     )
     similar_report_id = crud.create_report(similar_report)
-    print(f"   ✅ Created similar report: {similar_report_id}")
+    print(f"   Created similar report: {similar_report_id}")
     
     # Find duplicates
     duplicates = crud.find_duplicate_reports(
@@ -114,13 +114,13 @@ def test_crud_operations():
         threshold=0.95,
         exclude_id=report_id
     )
-    print(f"   ✅ Found {len(duplicates)} potential duplicates")
+    print(f"   Found {len(duplicates)} potential duplicates")
     if duplicates:
         for dup in duplicates:
             print(f"      - {dup['title']} (similarity: {dup['similarity_score']:.3f})")
     
     # Test 5: Report Routes
-    print("\n5️⃣  Testing Report Routes...")
+    print("\nTesting Report Routes...")
     route = ReportRoute(
         report_id=report_id,
         organisation_id=org_id,
@@ -128,14 +128,14 @@ def test_crud_operations():
         status="sent"
     )
     route_id = crud.create_report_route(route)
-    print(f"   ✅ Created report route: {route_id}")
+    print(f"   Created report route: {route_id}")
     
     routes = crud.get_routes_for_report(report_id)
     assert len(routes) > 0
-    print(f"   ✅ Retrieved {len(routes)} routes for report")
+    print(f"   Retrieved {len(routes)} routes for report")
     
     # Test 6: Related Reports
-    print("\n6️⃣  Testing Related Reports...")
+    print("\nTesting Related Reports...")
     if duplicates:
         related = RelatedReport(
             report_id=report_id,
@@ -144,33 +144,33 @@ def test_crud_operations():
             relationship_type="duplicate"
         )
         related_id = crud.create_related_report(related)
-        print(f"   ✅ Created related report link: {related_id}")
+        print(f"   Created related report link: {related_id}")
         
         related_reports = crud.get_related_reports(report_id)
-        print(f"   ✅ Retrieved {len(related_reports)} related reports")
+        print(f"   Retrieved {len(related_reports)} related reports")
     
     # Test 7: Query by Status/Category
-    print("\n7️⃣  Testing Queries...")
+    print("\nTesting Queries...")
     routed_reports = crud.get_reports_by_status("routed")
-    print(f"   ✅ Found {len(routed_reports)} routed reports")
+    print(f"   Found {len(routed_reports)} routed reports")
     
     infra_reports = crud.get_reports_by_category("infrastructure")
-    print(f"   ✅ Found {len(infra_reports)} infrastructure reports")
+    print(f"   Found {len(infra_reports)} infrastructure reports")
     
     # Cleanup
-    print("\n🧹 Cleaning up test data...")
+    print("\nCleaning up test data...")
     crud.delete_report(report_id)
     crud.delete_report(similar_report_id)
     crud.delete_organisation(org_id)
-    print("   ✅ Test data cleaned up")
+    print("   Test data cleaned up")
     
-    print("\n🎉 All CRUD tests passed!")
+    print("\nAll CRUD tests passed!")
 
 if __name__ == "__main__":
     try:
         test_crud_operations()
     except Exception as e:
-        print(f"\n❌ Test failed: {e}")
+        print(f"\nTest failed: {e}")
         import traceback
         traceback.print_exc()
         exit(1)

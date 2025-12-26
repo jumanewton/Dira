@@ -13,7 +13,7 @@ import crud
 def seed_organisations():
     """Seed initial Kenyan organisations"""
     
-    print("🌱 Seeding Kenyan organisations...")
+    print("Seeding Kenyan organisations...")
     
     organisations = [
         Organisation(
@@ -72,10 +72,10 @@ def seed_organisations():
         
         if not exists:
             crud.create_organisation(org)
-            print(f"✅ Created: {org.name}")
+            print(f"Created: {org.name}")
             created_count += 1
         else:
-            print(f"⏭️  Skipped: {org.name} (already exists)")
+            print(f"Skipped: {org.name} (already exists)")
             
     print(f"\n Seeding complete! Created {created_count} organisations")
 

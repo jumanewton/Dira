@@ -17,14 +17,14 @@ def test_connection():
     if db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)
     
-    print("🔌 Testing database connection...")
+    print("Testing database connection...")
     
     try:
         conn = psycopg2.connect(db_url)
         cur = conn.cursor()
         
         # Test 1: Check tables exist
-        print("\n📋 Testing table structure...")
+        print("\nTesting table structure...")
         cur.execute("""
             SELECT table_name 
             FROM information_schema.tables 
@@ -33,30 +33,30 @@ def test_connection():
             ORDER BY table_name;
         """)
         tables = cur.fetchall()
-        print(f"✅ Found {len(tables)} main tables: {[t[0] for t in tables]}")
+        print(f"Found {len(tables)} main tables: {[t[0] for t in tables]}")
         
         # Test 2: Insert and query a test organisation
-        print("\n🏢 Testing INSERT operation...")
+        print("\nTesting INSERT operation...")
         cur.execute("""
             INSERT INTO organisations (name, type, contact_email, facilities)
             VALUES ('Test Water Utility', 'utility', 'contact@test.com', '[]'::jsonb)
             RETURNING id, name, type;
         """)
         org = cur.fetchone()
-        print(f"✅ Created test organisation: {org[1]} ({org[2]})")
+        print(f"Created test organisation: {org[1]} ({org[2]})")
         
         # Test 3: Query the organisation
-        print("\n🔍 Testing SELECT operation...")
+        print("\nTesting SELECT operation...")
         cur.execute("""
             SELECT id, name, type, contact_email 
             FROM organisations 
             WHERE name = 'Test Water Utility';
         """)
         result = cur.fetchone()
-        print(f"✅ Retrieved organisation: {result[1]}")
+        print(f"Retrieved organisation: {result[1]}")
         
         # Test 4: Test pgvector
-        print("\n🔢 Testing pgvector functionality...")
+        print("\nTesting pgvector functionality...")
         cur.execute("""
             SELECT extname, extversion 
             FROM pg_extension 
@@ -64,7 +64,7 @@ def test_connection():
         """)
         vector_ext = cur.fetchone()
         if vector_ext:
-            print(f"✅ pgvector {vector_ext[1]} is installed")
+            print(f"pgvector {vector_ext[1]} is installed")
             
             # Test vector operations
             test_embedding = [0.1] * 384  # 384-dimensional vector
@@ -74,7 +74,7 @@ def test_connection():
                 RETURNING id, title;
             """, (test_embedding,))
             report = cur.fetchone()
-            print(f"✅ Created test report with embedding: {report[1]}")
+            print(f"Created test report with embedding: {report[1]}")
             
             # Test similarity search
             cur.execute("""
@@ -85,25 +85,25 @@ def test_connection():
                 LIMIT 5;
             """, (test_embedding, test_embedding))
             similar = cur.fetchall()
-            print(f"✅ Similarity search works! Found {len(similar)} results")
+            print(f"Similarity search works! Found {len(similar)} results")
         else:
-            print("❌ pgvector not found")
+            print("pgvector not found")
         
         # Cleanup test data
-        print("\n🧹 Cleaning up test data...")
+        print("\nCleaning up test data...")
         cur.execute("DELETE FROM reports WHERE title = 'Test Report';")
         cur.execute("DELETE FROM organisations WHERE name = 'Test Water Utility';")
         conn.commit()
-        print("✅ Test data cleaned up")
+        print("Test data cleaned up")
         
         cur.close()
         conn.close()
         
-        print("\n🎉 All database tests passed!")
+        print("\nAll database tests passed!")
         return True
         
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         return False
 
 if __name__ == "__main__":

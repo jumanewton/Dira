@@ -92,7 +92,7 @@ function App() {
             <li><Link to="/analytics">Analytics</Link></li>
             <li>
               <button onClick={toggleTheme} className="theme-toggle" title="Toggle Dark Mode">
-                {theme === 'light' ? '🌙' : '☀️'}
+                {theme === 'light' ? 'Dark' : 'Light'}
               </button>
             </li>
           </ul>

@@ -45,7 +45,7 @@ def run_schema():
         cur.execute(schema_sql)
         conn.commit()
         
-        print("✅ Schema created successfully!")
+        print("Schema created successfully!")
         
         # Verify tables were created
         cur.execute("""
@@ -56,27 +56,27 @@ def run_schema():
         """)
         
         tables = cur.fetchall()
-        print(f"\n📋 Tables created ({len(tables)}):")
+        print(f"\nTables created ({len(tables)}):")
         for table in tables:
             print(f"  - {table[0]}")
         
         # Check if vector extension is enabled
         cur.execute("SELECT * FROM pg_extension WHERE extname = 'vector';")
         if cur.fetchone():
-            print("\n✅ pgvector extension is enabled")
+            print("\npgvector extension is enabled")
         else:
-            print("\n⚠️  pgvector extension not found - trying to enable it...")
+            print("\npgvector extension not found - trying to enable it...")
             cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
             conn.commit()
-            print("✅ pgvector extension enabled")
+            print("pgvector extension enabled")
         
         cur.close()
         conn.close()
         
-        print("\n🎉 Database setup complete!")
+        print("\nDatabase setup complete!")
         
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         exit(1)
 
 if __name__ == "__main__":
