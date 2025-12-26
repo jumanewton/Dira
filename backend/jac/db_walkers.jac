@@ -7,7 +7,7 @@ import requests;
 import json;
 
 # Database API base URL
-DB_API_URL = "http://127.0.0.1:8002";
+DB_API_URL = "http://127.0.0.1:8004";
 
 walker IntakeAgentDB {
     """

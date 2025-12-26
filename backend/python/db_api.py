@@ -1,7 +1,7 @@
 """
 Database API Service for JAC Backend
 Provides HTTP endpoints for database operations that JAC can call
-Runs on port 8002
+Runs on port 8004
 """
 
 from fastapi import FastAPI, HTTPException
