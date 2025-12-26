@@ -769,56 +769,56 @@ walker generate_ai_insights {
         urgentCount = reportsByUrgency.get("high", 0);
         
         # Generate comprehensive insights
-        self.insights = f"## Executive Summary\n\n";
-        self.insights += f"**Overall Performance**: The system has received **{totalReports}** total reports, with **{uniqueReports}** unique issues identified. ";
+        self.insights = "## Executive Summary\n\n";
+        self.insights = self.insights + "**Overall Performance**: The system has received **" + str(totalReports) + "** total reports, with **" + str(uniqueReports) + "** unique issues identified. ";
         
         if duplicateReports > 0 {
             duplicatePercentage = (duplicateReports / totalReports) * 100;
-            self.insights += f"Approximately **{duplicatePercentage:.1f}%** of reports are duplicates, indicating either recurring issues or effective duplicate detection.\n\n";
+            self.insights = self.insights + "Approximately **" + str(duplicatePercentage) + "%** of reports are duplicates, indicating either recurring issues or effective duplicate detection.\n\n";
         } else {
-            self.insights += f"No duplicate reports detected, indicating diverse issue reporting.\n\n";
+            self.insights = self.insights + "No duplicate reports detected, indicating diverse issue reporting.\n\n";
         }
         
-        self.insights += f"### Resolution Metrics\n\n";
-        self.insights += f"- **Resolution Rate**: {resolutionRate:.1f}% ({resolvedReports} out of {totalReports} reports)\n";
-        self.insights += f"- **Average Resolution Time**: {avgResolutionTime:.1f} days\n";
+        self.insights = self.insights + "### Resolution Metrics\n\n";
+        self.insights = self.insights + "- **Resolution Rate**: " + str(resolutionRate) + "% (" + str(resolvedReports) + " out of " + str(totalReports) + " reports)\n";
+        self.insights = self.insights + "- **Average Resolution Time**: " + str(avgResolutionTime) + " days\n";
         
         if resolutionRate >= 80 {
-            self.insights += f"- **Assessment**: Excellent resolution performance, maintaining high public trust.\n\n";
+            self.insights = self.insights + "- **Assessment**: Excellent resolution performance, maintaining high public trust.\n\n";
         } elif resolutionRate >= 60 {
-            self.insights += f"- **Assessment**: Good resolution rate, with room for improvement in efficiency.\n\n";
+            self.insights = self.insights + "- **Assessment**: Good resolution rate, with room for improvement in efficiency.\n\n";
         } elif resolutionRate >= 40 {
-            self.insights += f"- **Assessment**: Moderate resolution rate, consider increasing response capacity.\n\n";
+            self.insights = self.insights + "- **Assessment**: Moderate resolution rate, consider increasing response capacity.\n\n";
         } else {
-            self.insights += f"- **Assessment**: Low resolution rate, immediate attention needed to improve public service delivery.\n\n";
+            self.insights = self.insights + "- **Assessment**: Low resolution rate, immediate attention needed to improve public service delivery.\n\n";
         }
         
-        self.insights += f"### Key Areas of Concern\n\n";
-        self.insights += f"**Most Reported Category**: *{mostCommonCategory}* with {maxCategoryCount} reports. This indicates a critical area requiring focused intervention and resource allocation.\n\n";
+        self.insights = self.insights + "### Key Areas of Concern\n\n";
+        self.insights = self.insights + "**Most Reported Category**: *" + mostCommonCategory + "* with " + str(maxCategoryCount) + " reports. This indicates a critical area requiring focused intervention and resource allocation.\n\n";
         
         if urgentCount > 0 {
             urgentPercentage = (urgentCount / totalReports) * 100;
-            self.insights += f"**High-Priority Issues**: {urgentCount} reports ({urgentPercentage:.1f}%) are marked as high urgency, requiring immediate attention to prevent service degradation.\n\n";
+            self.insights = self.insights + "**High-Priority Issues**: " + str(urgentCount) + " reports (" + str(urgentPercentage) + "%) are marked as high urgency, requiring immediate attention to prevent service degradation.\n\n";
         }
         
-        self.insights += f"### Recommendations\n\n";
+        self.insights = self.insights + "### Recommendations\n\n";
         
         if avgResolutionTime > 7 {
-            self.insights += f"1. **Reduce Resolution Time**: Current average of {avgResolutionTime:.1f} days exceeds optimal response time. Consider workflow optimization or additional resources.\n";
+            self.insights = self.insights + "1. **Reduce Resolution Time**: Current average of " + str(avgResolutionTime) + " days exceeds optimal response time. Consider workflow optimization or additional resources.\n";
         }
         
         if resolutionRate < 70 {
-            self.insights += f"2. **Improve Resolution Rate**: Focus on closing pending reports to build public confidence in the system.\n";
+            self.insights = self.insights + "2. **Improve Resolution Rate**: Focus on closing pending reports to build public confidence in the system.\n";
         }
         
         if urgentCount > totalReports * 0.3 {
-            self.insights += f"3. **Address Urgent Issues**: High proportion of urgent reports suggests systemic issues requiring strategic intervention.\n";
+            self.insights = self.insights + "3. **Address Urgent Issues**: High proportion of urgent reports suggests systemic issues requiring strategic intervention.\n";
         }
         
         if duplicateReports > totalReports * 0.2 {
-            self.insights += f"4. **Investigate Recurring Issues**: High duplicate rate indicates persistent problems that may need root cause analysis.\n";
+            self.insights = self.insights + "4. **Investigate Recurring Issues**: High duplicate rate indicates persistent problems that may need root cause analysis.\n";
         } else {
-            self.insights += f"4. **Maintain Service Quality**: Continue current practices while monitoring emerging trends.\n";
+            self.insights = self.insights + "4. **Maintain Service Quality**: Continue current practices while monitoring emerging trends.\n";
         }
         
         report {"insights": self.insights};
