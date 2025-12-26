@@ -77,7 +77,7 @@ def seed_organisations():
         else:
             print(f"⏭️  Skipped: {org.name} (already exists)")
             
-    print(f"\n✅ Seeding complete! Created {created_count} organisations")
+    print(f"\n Seeding complete! Created {created_count} organisations")
 
 if __name__ == "__main__":
     seed_organisations()
