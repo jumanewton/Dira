@@ -193,9 +193,36 @@ walker RouterAgent {
                 assigned_at=str(datetime.datetime.now()),
                 status="sent"
             ) ++> org;
+
+            # --- DB PERSISTENCE (Route) ---
+            DB_API_URL = "http://127.0.0.1:8002";
+            try {
+                # We need org ID. If org node has it, great.
+                # If not, we might fail to link in DB, but we try.
+                requests.post(DB_API_URL + "/report_routes", json={
+                    "report_id": here.id,
+                    "organisation_id": org.id, 
+                    "message": message,
+                    "status": "sent"
+                });
+            } except Exception as e {
+                print("RouterAgent: DB Persistence Error (Route): " + str(e));
+            }
+            # ------------------------------
         }
         
         here.status = "routed";
+
+        # --- DB PERSISTENCE (Status) ---
+        DB_API_URL = "http://127.0.0.1:8002";
+        try {
+            requests.patch(DB_API_URL + "/reports/" + here.id, json={
+                "status": "routed"
+            });
+        } except Exception as e {
+            print("RouterAgent: DB Persistence Error (Status): " + str(e));
+        }
+        # -------------------------------
     }
 }
 
@@ -225,6 +252,29 @@ walker DuplicateDetectorAgent {
             } else {
                 here.status = "unique";
             }
+
+            # --- DB PERSISTENCE ---
+            DB_API_URL = "http://127.0.0.1:8002";
+            try {
+                requests.patch(DB_API_URL + "/reports/" + here.id, json={
+                    "status": here.status
+                });
+                
+                # Also store related reports (duplicates)
+                if len(duplicates) > 0 {
+                    for dup in duplicates {
+                        requests.post(DB_API_URL + "/related_reports", json={
+                            "report_id": here.id,
+                            "related_report_id": dup["report_id"],
+                            "similarity_score": dup["score"],
+                            "relationship_type": "duplicate"
+                        });
+                    }
+                }
+            } except Exception as e {
+                print("DuplicateDetectorAgent: DB Persistence Error: " + str(e));
+            }
+            # ----------------------
         } else {
         }
         
@@ -265,6 +315,20 @@ walker ClassifierAgent {
         } else {
         }
         
+        # --- DB PERSISTENCE ---
+        DB_API_URL = "http://127.0.0.1:8002";
+        try {
+            requests.patch(DB_API_URL + "/reports/" + here.id, json={
+                "category": here.category,
+                "urgency": here.urgency,
+                "confidence": here.confidence,
+                "status": "classified"
+            });
+        } except Exception as e {
+            print("ClassifierAgent: DB Persistence Error: " + str(e));
+        }
+        # ----------------------
+
         # Store embedding
         response = requests.post("http://127.0.0.1:8001/store_embedding", json={
             "report_id": here.id,
@@ -307,8 +371,63 @@ walker IntakeAgent {
             }
         }
 
+        # --- DB PERSISTENCE ---
+        DB_API_URL = "http://127.0.0.1:8002";
+        db_reporter_id = str(uuid.uuid4()); # Fallback
+        db_report_id = str(uuid.uuid4());   # Fallback
+
+        # Create or get reporter in database
+        reporter_email = self.report_data["email"];
+        reporter_name = self.report_data.get("name", "");
+        
+        try {
+            check_response = requests.get(DB_API_URL + "/reporters/email/" + reporter_email);
+            if check_response.status_code == 200 {
+                reporter_data = check_response.json();
+                if reporter_data["exists"] {
+                    db_reporter_id = reporter_data["reporter_id"];
+                } else {
+                    # Create new reporter
+                    create_reporter_response = requests.post(DB_API_URL + "/reporters", json={
+                        "name": reporter_name if reporter_name else None,
+                        "email": reporter_email,
+                        "is_anonymous": (reporter_name == "")
+                    });
+                    if create_reporter_response.status_code == 200 {
+                        db_reporter_id = create_reporter_response.json()["reporter_id"];
+                    }
+                }
+            }
+        } except Exception as e {
+            print("IntakeAgent: DB Persistence Error (Reporter): " + str(e));
+        }
+
+        # Create report in database
+        try {
+            create_report_response = requests.post(DB_API_URL + "/reports", json={
+                "title": self.report_data["title"],
+                "description": self.report_data["description"],
+                "category": "pending",
+                "urgency": "medium",
+                "entities": entities,
+                "confidence": 0.5,
+                "status": "submitted",
+                "reporter_id": db_reporter_id,
+                "image_data": image_data,
+                "analysis_result": analysis_result
+            });
+            
+            if create_report_response.status_code == 200 {
+                db_report_id = create_report_response.json()["report_id"];
+                print("IntakeAgent: Persisted report to DB: " + db_report_id);
+            }
+        } except Exception as e {
+            print("IntakeAgent: DB Persistence Error (Report): " + str(e));
+        }
+        # ----------------------
+
         reporter_node = Reporter(
-            id=str(uuid.uuid4()),
+            id=db_reporter_id,
             name=self.report_data["name"],
             email=self.report_data["email"],
             is_anonymous=(self.report_data["name"] == "")
@@ -317,7 +436,7 @@ walker IntakeAgent {
         # Create report node
         try {
             new_report = Report(
-                id=str(uuid.uuid4()),
+                id=db_report_id,
                 title=self.report_data["title"],
                 description=self.report_data["description"],
                 category="pending",
