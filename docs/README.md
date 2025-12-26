@@ -91,6 +91,19 @@ To populate the system with realistic demo data (requires Jac Backend running on
 python load_seed_data.py
 ```
 
+## Deployment
+
+### Backend (Heroku)
+The backend services (Jac, NLP, Notification, DB API) are containerized and deployed to Heroku.
+- **Build:** Uses `Dockerfile` in the root.
+- **Services:** Runs all python services and the Jac runtime.
+- **Database:** Connects to Heroku PostgreSQL.
+
+### Frontend (Vercel)
+The React frontend is deployed to Vercel.
+- **Build:** Connects to the GitHub repo and builds the `frontend` directory.
+- **Configuration:** `REACT_APP_API_URL` environment variable points to the Heroku Backend URL.
+
 ## Documentation
 - [Agent Interaction Diagram](architecture.md)
 - [Evaluation Plan](evaluation_plan.md)

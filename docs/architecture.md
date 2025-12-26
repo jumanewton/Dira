@@ -63,3 +63,20 @@ sequenceDiagram
 | **ClassifierAgent** | Uses NLP Service to determine category and urgency. Stores vector embeddings. | Spawning by `IntakeAgent`. |
 | **DuplicateDetectorAgent** | Queries vector database to find semantic duplicates. Updates status. | Spawning by `ClassifierAgent`. |
 | **RouterAgent** | Traverses OSP graph to find relevant organizations. Drafts messages via NLP Service and sends notifications. | Spawning by `DuplicateDetectorAgent`. |
+
+## Deployment Architecture
+
+The system uses a split deployment architecture:
+
+1.  **Frontend (Vercel)**:
+    *   React SPA hosted on Vercel's Edge Network.
+    *   Communicates with the Backend via REST API.
+
+2.  **Backend (Heroku)**:
+    *   **Container:** Single Docker container running multiple processes (Jac Runtime, NLP Service, Notification Service).
+    *   **Database:** Heroku PostgreSQL with `pgvector` extension.
+    *   **Storage:** Ephemeral filesystem (models downloaded on startup).
+
+3.  **Communication**:
+    *   Frontend -> Backend: HTTP/REST (Port 8002 exposed).
+    *   Backend Internal: Localhost HTTP calls between Jac and Python Microservices.
