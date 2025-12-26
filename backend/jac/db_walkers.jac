@@ -41,7 +41,8 @@ walker IntakeAgentDB {
         reporter_name = self.report_data.get("name", "");
         reporter_id = "";
         
-        if reporter_email {
+        # Check if email is valid (not empty and not just whitespace)
+        if reporter_email and reporter_email.strip() != "" {
             check_response = requests.get(DB_API_URL + "/reporters/email/" + reporter_email);
             if check_response.status_code == 200 {
                 reporter_data = check_response.json();
@@ -54,17 +55,20 @@ walker IntakeAgentDB {
 
         if not reporter_id {
             # Create new reporter
-            create_reporter_response = requests.post(DB_API_URL + "/reporters", json={
-                "name": reporter_name if reporter_name else None,
-                "email": reporter_email,
-                "is_anonymous": (reporter_name == "")
-            });
-            if create_reporter_response.status_code == 200 {
-                reporter_id = create_reporter_response.json()["reporter_id"];
-                print("IntakeAgentDB: Created new reporter: " + reporter_id);
-            } else {
-                print("IntakeAgentDB: Failed to create reporter");
-                disengage;
+            # Only create if we have some info, otherwise treat as anonymous/no-reporter
+            if reporter_email or reporter_name {
+                create_reporter_response = requests.post(DB_API_URL + "/reporters", json={
+                    "name": reporter_name if reporter_name else None,
+                    "email": reporter_email if reporter_email else "anonymous@example.com",
+                    "is_anonymous": (reporter_name == "")
+                });
+                if create_reporter_response.status_code == 200 {
+                    reporter_id = create_reporter_response.json()["reporter_id"];
+                    print("IntakeAgentDB: Created new reporter: " + reporter_id);
+                } else {
+                    print("IntakeAgentDB: Failed to create reporter");
+                    # Don't disengage, just continue without reporter_id
+                }
             }
         }
 
