@@ -39,31 +39,33 @@ walker IntakeAgentDB {
         # Create or get reporter in database
         reporter_email = self.report_data["email"];
         reporter_name = self.report_data.get("name", "");
+        reporter_id = "";
         
-        check_response = requests.get(DB_API_URL + "/reporters/email/" + reporter_email);
-        if check_response.status_code == 200 {
-            reporter_data = check_response.json();
-            if reporter_data["exists"] {
-                reporter_id = reporter_data["reporter_id"];
-                print("IntakeAgentDB: Using existing reporter: " + reporter_id);
-            } else {
-                # Create new reporter
-                create_reporter_response = requests.post(DB_API_URL + "/reporters", json={
-                    "name": reporter_name if reporter_name else None,
-                    "email": reporter_email,
-                    "is_anonymous": (reporter_name == "")
-                });
-                if create_reporter_response.status_code == 200 {
-                    reporter_id = create_reporter_response.json()["reporter_id"];
-                    print("IntakeAgentDB: Created new reporter: " + reporter_id);
-                } else {
-                    print("IntakeAgentDB: Failed to create reporter");
-                    disengage;
+        if reporter_email {
+            check_response = requests.get(DB_API_URL + "/reporters/email/" + reporter_email);
+            if check_response.status_code == 200 {
+                reporter_data = check_response.json();
+                if reporter_data["exists"] {
+                    reporter_id = reporter_data["reporter_id"];
+                    print("IntakeAgentDB: Using existing reporter: " + reporter_id);
                 }
             }
-        } else {
-            print("IntakeAgentDB: Failed to check reporter");
-            disengage;
+        }
+
+        if not reporter_id {
+            # Create new reporter
+            create_reporter_response = requests.post(DB_API_URL + "/reporters", json={
+                "name": reporter_name if reporter_name else None,
+                "email": reporter_email,
+                "is_anonymous": (reporter_name == "")
+            });
+            if create_reporter_response.status_code == 200 {
+                reporter_id = create_reporter_response.json()["reporter_id"];
+                print("IntakeAgentDB: Created new reporter: " + reporter_id);
+            } else {
+                print("IntakeAgentDB: Failed to create reporter");
+                disengage;
+            }
         }
 
         # Create report in database

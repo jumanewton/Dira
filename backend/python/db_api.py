@@ -7,6 +7,7 @@ Runs on port 8004
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
+from uuid import UUID
 import sys
 import os
 
@@ -75,9 +76,9 @@ def create_reporter_endpoint(request: CreateReporterRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/reporters/{reporter_id}")
-def get_reporter_endpoint(reporter_id: str):
+def get_reporter_endpoint(reporter_id: UUID):
     """Get reporter by ID"""
-    reporter = crud.get_reporter(reporter_id)
+    reporter = crud.get_reporter(str(reporter_id))
     if not reporter:
         raise HTTPException(status_code=404, detail="Reporter not found")
     return reporter.__dict__
@@ -115,9 +116,9 @@ def create_report_endpoint(request: CreateReportRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/reports/{report_id}")
-def get_report_endpoint(report_id: str):
+def get_report_endpoint(report_id: UUID):
     """Get report by ID"""
-    report = crud.get_report(report_id)
+    report = crud.get_report(str(report_id))
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report.__dict__

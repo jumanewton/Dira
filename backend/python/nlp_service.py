@@ -173,12 +173,6 @@ class StoreEmbeddingRequest(BaseModel):
 
 @app.post("/store_embedding")
 def store_embedding(request: StoreEmbeddingRequest):
-    if not client:
-        return {"status": "skipped", "reason": "Weaviate not connected"}
-        
-    text = request.title + " " + request.description
-@app.post("/store_embedding")
-def store_embedding(request: StoreEmbeddingRequest):
     """Store report embedding in PostgreSQL"""
     try:
         text = request.title + " " + request.description
