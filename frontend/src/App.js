@@ -21,11 +21,12 @@ function App() {
 
     // Auto-login as admin for demo purposes to share the graph
     const login = async () => {
+      const API_URL = process.env.REACT_APP_API_URL || '';
       try {
         // We need to hit the login endpoint. 
         // If jac-client doesn't expose login directly, we use fetch.
         // Assuming the proxy is set up to localhost:8002
-        const response = await fetch('/user/login', {
+        const response = await fetch(`${API_URL}/user/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
@@ -39,14 +40,14 @@ function App() {
             setIsLoggedIn(true);
         } else {
             // Try create if login fails
-             const createResponse = await fetch('/user/create', {
+             const createResponse = await fetch(`${API_URL}/user/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
             });
             if (createResponse.ok) {
                 // Login again
-                 const loginResponse = await fetch('/user/login', {
+                 const loginResponse = await fetch(`${API_URL}/user/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: "admin@dira.com", password: "password123" })
