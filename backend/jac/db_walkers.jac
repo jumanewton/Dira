@@ -69,6 +69,9 @@ walker IntakeAgentDB {
         }
 
         # Create report in database
+        # Ensure reporter_id is None if empty string to avoid UUID errors
+        final_reporter_id = reporter_id if reporter_id else None;
+
         create_report_response = requests.post(DB_API_URL + "/reports", json={
             "title": self.report_data["title"],
             "description": self.report_data["description"],
@@ -77,7 +80,7 @@ walker IntakeAgentDB {
             "entities": entities,
             "confidence": 0.5,
             "status": "submitted",
-            "reporter_id": reporter_id,
+            "reporter_id": final_reporter_id,
             "image_data": image_data,
             "analysis_result": analysis_result
         });
