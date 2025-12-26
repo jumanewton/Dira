@@ -113,6 +113,9 @@ def create_report_endpoint(request: CreateReportRequest):
         report_id = crud.create_report(report)
         return {"report_id": report_id, "status": "created"}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error creating report: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/reports/{report_id}")
