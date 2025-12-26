@@ -29,7 +29,7 @@ python3 setup_db.py || echo "⚠️  Schema setup failed or already exists"
 
 # Seed organisations if needed
 echo "🌱 Seeding organisations..."
-python3 seed_orgs.py || echo "⚠️  Org seeding failed or already done"
+python3 seed_orgs_kenya.py || echo "⚠️  Org seeding failed or already done"
 
 # Start Database API in the background on port 8002
 echo "🔧 Starting Database API on port 8002..."
