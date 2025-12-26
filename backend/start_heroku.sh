@@ -52,5 +52,11 @@ sleep 5
 # Start the JAC Server on the port provided by Heroku ($PORT)
 echo "📡 Starting JAC Backend on port $PORT..."
 cd ../jac
+
+# Build JAC code to bytecode
+echo "🔨 Building JAC bytecode..."
+jac build main.jac || { echo "❌ JAC build failed"; exit 1; }
+echo "✅ JAC build complete!"
+
 export PYTHONUNBUFFERED=1
 jac serve main.jac --port $PORT | grep --line-buffered -vE "^\{|^\["
